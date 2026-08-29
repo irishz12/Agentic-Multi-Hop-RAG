@@ -13,6 +13,15 @@ export function Footer() {
           (Tang &amp; Yang, 2024, COLM 2024). All figures on this page are read
           directly from the project&rsquo;s committed evaluation artifacts.
         </p>
+        <p className="mt-4">
+          RISHIKESH K G —{" "}
+          <a
+            href="mailto:irishz121212@gmail.com"
+            className="underline decoration-rule underline-offset-4 hover:decoration-ink-muted"
+          >
+            irishz121212@gmail.com
+          </a>
+        </p>
       </div>
     </footer>
   );

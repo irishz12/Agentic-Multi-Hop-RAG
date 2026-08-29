@@ -455,3 +455,7 @@ tests/                 Unit tests (offline, fake Mantle/retrieval) + guard tests
                        into a runtime decision) + integration tests (real models + live Qdrant)
 results/               Evaluation artifacts (tracked in git) + results/charts/ (this README's images)
 ```
+
+## Author
+
+RISHIKESH K G — [irishz121212@gmail.com](mailto:irishz121212@gmail.com)
