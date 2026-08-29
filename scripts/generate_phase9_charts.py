@@ -4,6 +4,14 @@ from already-measured artifacts (results/phase9_sample_report.json,
 results/phase9_holdout_report.json, results/phase9_*_raw.json). No live
 calls, no new measurements, no retrieval/model/prompt/router code touched.
 
+The frozen report/raw files still use this project's legacy pipeline
+names (`always_agentic`, `adaptive`) internally — see
+`mhrag.eval.legacy_pipeline_names` for why they're never renamed. This
+script rekeys them to canonical names (`agentic_multi_hop`, `adaptive_rag`)
+immediately after loading, through that one module; everything below that
+point — including every color, chart label, and axis — uses canonical
+names only.
+
 Fixed, consistent categorical color assignment across every chart (never
 re-cycled per chart): Dense/Hybrid/Hybrid+Reranker in a light->dark gray
 ramp (baselines, de-emphasized), Agentic Multi-Hop RAG in blue, Adaptive
@@ -27,6 +35,11 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 from mhrag.config import PROJECT_ROOT
+from mhrag.eval.legacy_pipeline_names import (
+    get_quality_retention_pct,
+    rekey_legacy_prefixed_keys,
+    rekey_legacy_report,
+)
 
 CHARTS_DIR = PROJECT_ROOT / "results" / "charts"
 
@@ -34,15 +47,15 @@ COLORS = {
     "dense": "#B0B0B0",
     "hybrid": "#808080",
     "hybrid_reranker": "#4D4D4D",
-    "always_agentic": "#0072B2",  # Agentic Multi-Hop RAG
-    "adaptive": "#E69F00",  # Adaptive RAG
+    "agentic_multi_hop": "#0072B2",  # Agentic Multi-Hop RAG
+    "adaptive_rag": "#E69F00",  # Adaptive RAG
 }
 LABELS = {
     "dense": "Dense RAG",
     "hybrid": "Hybrid RAG",
     "hybrid_reranker": "Hybrid + Reranker",
-    "always_agentic": "Agentic Multi-Hop RAG",
-    "adaptive": "Adaptive RAG",
+    "agentic_multi_hop": "Agentic Multi-Hop RAG",
+    "adaptive_rag": "Adaptive RAG",
 }
 GROUP_LABELS = {
     "inference_query": "Inference", "comparison_query": "Comparison",
@@ -75,14 +88,14 @@ def _bar_with_labels(ax, x, heights, colors, labels, fmt="{:.2f}"):
 
 def chart_answer_quality(dev: dict, holdout: dict) -> None:
     fig, axes = plt.subplots(1, 2, figsize=(9, 4.2), sharey=True)
-    dev_pipelines = ["hybrid_reranker", "always_agentic", "adaptive"]
+    dev_pipelines = ["hybrid_reranker", "agentic_multi_hop", "adaptive_rag"]
     dev_vals = [dev["combined_quality_mean"][p] for p in dev_pipelines]
     _bar_with_labels(axes[0], range(len(dev_pipelines)), dev_vals,
                       [COLORS[p] for p in dev_pipelines], [LABELS[p] for p in dev_pipelines])
     axes[0].set_title("Development sample (n=50)")
     axes[0].set_ylabel("Combined quality score")
 
-    hold_pipelines = ["always_agentic", "adaptive"]
+    hold_pipelines = ["agentic_multi_hop", "adaptive_rag"]
     hold_vals = [holdout["combined_quality_mean"][p] for p in hold_pipelines]
     _bar_with_labels(axes[1], range(len(hold_pipelines)), hold_vals,
                       [COLORS[p] for p in hold_pipelines], [LABELS[p] for p in hold_pipelines])
@@ -98,7 +111,7 @@ def chart_answer_quality(dev: dict, holdout: dict) -> None:
 
 def chart_evidence_coverage(dev: dict, holdout: dict) -> None:
     fig, axes = plt.subplots(1, 2, figsize=(9, 4.2), sharey=True)
-    dev_pipelines = ["dense", "hybrid", "hybrid_reranker", "always_agentic", "adaptive"]
+    dev_pipelines = ["dense", "hybrid", "hybrid_reranker", "agentic_multi_hop", "adaptive_rag"]
     dev_vals = [dev["evidence_coverage_mean"][p] for p in dev_pipelines]
     _bar_with_labels(axes[0], range(len(dev_pipelines)), dev_vals,
                       [COLORS[p] for p in dev_pipelines], [LABELS[p] for p in dev_pipelines],
@@ -107,7 +120,7 @@ def chart_evidence_coverage(dev: dict, holdout: dict) -> None:
     axes[0].set_ylabel("Gold-evidence coverage (non-null questions)")
     axes[0].set_ylim(0, 1.0)
 
-    hold_pipelines = ["always_agentic", "adaptive"]
+    hold_pipelines = ["agentic_multi_hop", "adaptive_rag"]
     hold_vals = [holdout["evidence_coverage_mean"][p] for p in hold_pipelines]
     _bar_with_labels(axes[1], range(len(hold_pipelines)), hold_vals,
                       [COLORS[p] for p in hold_pipelines], [LABELS[p] for p in hold_pipelines],
@@ -124,14 +137,14 @@ def chart_evidence_coverage(dev: dict, holdout: dict) -> None:
 def chart_cost_or_latency(metric_key: str, title: str, ylabel: str, fmt: str, filename: str,
                            dev_costs: dict, holdout: dict) -> None:
     fig, axes = plt.subplots(1, 2, figsize=(9, 4.2))
-    dev_pipelines = ["dense", "hybrid", "hybrid_reranker", "always_agentic", "adaptive"]
+    dev_pipelines = ["dense", "hybrid", "hybrid_reranker", "agentic_multi_hop", "adaptive_rag"]
     dev_vals = [dev_costs[p] for p in dev_pipelines]
     _bar_with_labels(axes[0], range(len(dev_pipelines)), dev_vals,
                       [COLORS[p] for p in dev_pipelines], [LABELS[p] for p in dev_pipelines], fmt=fmt)
     axes[0].set_title("Development sample (n=50)")
     axes[0].set_ylabel(ylabel)
 
-    hold_pipelines = ["always_agentic", "adaptive"]
+    hold_pipelines = ["agentic_multi_hop", "adaptive_rag"]
     hold_vals = [holdout["cost_latency"][f"{p}_mean_{metric_key}"] for p in hold_pipelines]
     _bar_with_labels(axes[1], range(len(hold_pipelines)), hold_vals,
                       [COLORS[p] for p in hold_pipelines], [LABELS[p] for p in hold_pipelines], fmt=fmt)
@@ -152,12 +165,12 @@ def chart_breakdown(dev_breakdown: dict, holdout_breakdown: dict, key_order: lis
         keys = [k for k in key_order if k in breakdown]
         x = range(len(keys))
         width = 0.35
-        agentic_vals = [breakdown[k]["always_agentic_mean_quality"] for k in keys]
-        adaptive_vals = [breakdown[k]["adaptive_mean_quality"] for k in keys]
-        ax.bar([i - width / 2 for i in x], agentic_vals, width, color=COLORS["always_agentic"],
-               label=LABELS["always_agentic"])
-        ax.bar([i + width / 2 for i in x], adaptive_vals, width, color=COLORS["adaptive"],
-               label=LABELS["adaptive"])
+        agentic_vals = [breakdown[k]["agentic_multi_hop_mean_quality"] for k in keys]
+        adaptive_vals = [breakdown[k]["adaptive_rag_mean_quality"] for k in keys]
+        ax.bar([i - width / 2 for i in x], agentic_vals, width, color=COLORS["agentic_multi_hop"],
+               label=LABELS["agentic_multi_hop"])
+        ax.bar([i + width / 2 for i in x], adaptive_vals, width, color=COLORS["adaptive_rag"],
+               label=LABELS["adaptive_rag"])
         ax.set_xticks(list(x))
         ax.set_xticklabels([f"{GROUP_LABELS.get(k, k)}\n(n={breakdown[k]['n']})" for k in keys], fontsize=9)
         ax.set_title(split_title)
@@ -174,8 +187,7 @@ def chart_breakdown(dev_breakdown: dict, holdout_breakdown: dict, key_order: lis
 
 def chart_dev_vs_holdout(dev: dict, holdout: dict) -> None:
     metrics = [
-        ("Quality retention", dev["adaptive_quality_retention_pct_vs_always_agentic"],
-         holdout["adaptive_quality_retention_pct_vs_always_agentic"]),
+        ("Quality retention", get_quality_retention_pct(dev), get_quality_retention_pct(holdout)),
         ("Cost reduction", dev["cost_latency"]["cost_reduction_pct"], holdout["cost_latency"]["cost_reduction_pct"]),
         ("Latency reduction", dev["cost_latency"]["latency_reduction_pct"],
          holdout["cost_latency"]["latency_reduction_pct"]),
@@ -203,8 +215,19 @@ def chart_dev_vs_holdout(dev: dict, holdout: dict) -> None:
 def main() -> None:
     CHARTS_DIR.mkdir(parents=True, exist_ok=True)
 
+    # Load the frozen reports, then immediately rekey every legacy-named
+    # pipeline field to canonical — everything from here on sees only
+    # agentic_multi_hop/adaptive_rag, never always_agentic/adaptive.
     dev = json.loads((PROJECT_ROOT / "results" / "phase9_sample_report.json").read_text())
     holdout = json.loads((PROJECT_ROOT / "results" / "phase9_holdout_report.json").read_text())
+    for report in (dev, holdout):
+        report["combined_quality_mean"] = rekey_legacy_report(report["combined_quality_mean"])
+        report["evidence_coverage_mean"] = rekey_legacy_report(report["evidence_coverage_mean"])
+        report["cost_latency"] = rekey_legacy_prefixed_keys(report["cost_latency"])
+        for breakdown_key in ("breakdown_by_question_type", "breakdown_by_hop_count"):
+            report[breakdown_key] = {
+                group: rekey_legacy_prefixed_keys(values) for group, values in report[breakdown_key].items()
+            }
 
     sample = json.loads((PROJECT_ROOT / "results" / "phase9_sample.json").read_text())
     sample_ids = set(sample["qa_ids"])
@@ -215,10 +238,9 @@ def main() -> None:
         recs = [r for r in raw["records"] if r["qa_id"] in sample_ids]
         dev_cost[p] = sum(r["total_cost_usd"] for r in recs) / len(recs)
         dev_latency[p] = sum(r["total_latency_ms"] for r in recs) / len(recs)
-    dev_cost["always_agentic"] = dev["cost_latency"]["always_agentic_mean_cost_usd"]
-    dev_cost["adaptive"] = dev["cost_latency"]["adaptive_mean_cost_usd"]
-    dev_latency["always_agentic"] = dev["cost_latency"]["always_agentic_mean_latency_ms"]
-    dev_latency["adaptive"] = dev["cost_latency"]["adaptive_mean_latency_ms"]
+    for p in ("agentic_multi_hop", "adaptive_rag"):
+        dev_cost[p] = dev["cost_latency"][f"{p}_mean_cost_usd"]
+        dev_latency[p] = dev["cost_latency"][f"{p}_mean_latency_ms"]
 
     chart_answer_quality(dev, holdout)
     chart_evidence_coverage(dev, holdout)

@@ -1,7 +1,7 @@
 [project]
-name = "adaptive-multi-hop-retrieval"
+name = "agentic-multi-hop-rag"
 version = "0.1.0"
-description = "Adaptive cost-aware agentic RAG, benchmarked on MultiHop-RAG."
+description = "Agentic Multi-Hop RAG: a cost-aware agentic RAG system, benchmarked on MultiHop-RAG."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

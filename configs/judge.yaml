@@ -3,8 +3,8 @@
 # The judge model is DELIBERATELY a third, distinct model from both
 # `qwen.qwen3-next-80b-a3b-instruct` (configs/mantle.yaml: generation — the
 # model that produces every candidate answer being judged) and
-# `zai.glm-4.7-flash` (configs/agent.yaml: controller — the Always-Agentic/
-# Adaptive routing model) — the judge never grades its own output, and
+# `zai.glm-4.7-flash` (configs/agent.yaml: controller — the Agentic Multi-Hop
+# RAG/Adaptive RAG routing model) — the judge never grades its own output, and
 # never shares a model with a routing decision either.
 #
 # Judge configuration is FROZEN per the Phase 9 spec ("keep judge

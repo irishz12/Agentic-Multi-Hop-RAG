@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Phase 8B: LIVE Adaptive vs Always-Agentic DEVELOPMENT smoke comparison.
+"""Phase 8B: LIVE Adaptive RAG vs Agentic Multi-Hop RAG DEVELOPMENT smoke comparison.
 
 Makes REAL API calls (GLM 4.7 Flash controller + Qwen final answer) to
 Amazon Bedrock Mantle and incurs REAL (small) cost — connectivity/behavior
@@ -7,12 +7,13 @@ validation over a small, deterministic question set, NOT the full
 development generation benchmark.
 
 For EVERY question, runs BOTH pipelines independently and compares them:
-  - Adaptive (`mhrag.adaptive.pipeline.run_adaptive_pipeline`): Hybrid ->
+  - Adaptive RAG (`mhrag.adaptive.pipeline.run_adaptive_pipeline`): Hybrid ->
     frozen Phase 8A.2 learned router (Stage 1 tau=0.63, Stage 2 tau=0.70)
     -> the cheapest backend the router decides is sufficient -> Qwen.
-  - Always-Agentic (`mhrag.agent.loop.run_agentic_retrieval`, UNMODIFIED —
-    this script never edits or reconfigures it): full bounded agentic loop
-    for every question regardless of route, exactly as Phase 7/7.1 left it.
+  - Agentic Multi-Hop RAG (`mhrag.agent.loop.run_agentic_retrieval`,
+    UNMODIFIED — this script never edits or reconfigures it): full bounded
+    agentic loop for every question regardless of route, exactly as
+    Phase 7/7.1 left it.
 
 Both use the SAME embedding/BM25/reranker models, the SAME GLM controller
 client, and the SAME Qwen generation client/config — so any cost/latency
@@ -107,8 +108,8 @@ def _load_router_model(d: dict) -> LinearModel:
 
 def _trace_summary(trace, route_label: str | None, stage1_p: float | None, stage2_p: float | None) -> dict:
     """Uniform per-pipeline summary — works for both AdaptiveTrace (route_label
-    given) and Always-Agentic's AgenticTrace (route_label=None, always effectively
-    COMPLEX-shaped: full agentic loop, no router)."""
+    given) and Agentic Multi-Hop RAG's AgenticTrace (route_label=None, always
+    effectively COMPLEX-shaped: full agentic loop, no router)."""
     if route_label is not None:  # AdaptiveTrace
         return {
             "predicted_route": trace.route,
@@ -137,9 +138,9 @@ def _trace_summary(trace, route_label: str | None, stage1_p: float | None, stage
             "num_chunks_used_for_generation": len(trace.chunks_used_for_generation),
             "evidence_doc_ids_used": sorted({c.doc_id for c in trace.chunks_used_for_generation}),
         }
-    # AgenticTrace (Always-Agentic)
+    # AgenticTrace (Agentic Multi-Hop RAG)
     return {
-        "predicted_route": "ALWAYS_AGENTIC",
+        "predicted_route": "AGENTIC_MULTI_HOP",
         "stage1_probability": None,
         "stage2_probability": None,
         "num_retrieval_calls": trace.num_retrieval_calls,
@@ -279,7 +280,7 @@ def main() -> None:
             controller_client, generation_client, config=config,
         )
 
-        adaptive_summary = _trace_summary(adaptive_trace, "adaptive", None, None)
+        adaptive_summary = _trace_summary(adaptive_trace, "adaptive_rag", None, None)
         agentic_summary = _trace_summary(agentic_trace, None, None, None)
 
         adaptive_gold_covered = len(gold_ids & set(adaptive_summary["evidence_doc_ids_used"]))
@@ -297,8 +298,8 @@ def main() -> None:
             evidence_comparison = "same"
 
         # An "under-routed failure": the router sent this question somewhere cheaper than
-        # COMPLEX, but Adaptive's evidence coverage came up short of Always-Agentic's — the
-        # concrete, observable symptom of under-routing (not just "oracle said COMPLEX").
+        # COMPLEX, but Adaptive RAG's evidence coverage came up short of Agentic Multi-Hop
+        # RAG's — the concrete, observable symptom of under-routing (not just "oracle said COMPLEX").
         is_under_routed_failure = (
             adaptive_trace.route in ("SIMPLE", "MEDIUM") and adaptive_gold_covered < agentic_gold_covered
         )
@@ -311,15 +312,15 @@ def main() -> None:
               f"cost=${adaptive_summary['total_cost_usd']:.6f} "
               f"latency={adaptive_summary['total_latency_ms']:.0f}ms "
               f"gold_covered={adaptive_gold_covered}/{len(gold_ids)}")
-        print(f"  Always-Agentic: stop={agentic_summary['stop_reason']} "
+        print(f"  Agentic Multi-Hop RAG: stop={agentic_summary['stop_reason']} "
               f"retrieval_calls={agentic_summary['num_retrieval_calls']} "
               f"controller_calls={agentic_summary['num_controller_calls']} "
               f"cost=${agentic_summary['total_cost_usd']:.6f} "
               f"latency={agentic_summary['total_latency_ms']:.0f}ms "
               f"gold_covered={agentic_gold_covered}/{len(gold_ids)}")
         print(f"  evidence_comparison={evidence_comparison}  under_routed_failure={is_under_routed_failure}")
-        print(f"  Adaptive answer:       {adaptive_summary['answer'][:160]!r}")
-        print(f"  Always-Agentic answer: {agentic_summary['answer'][:160]!r}")
+        print(f"  Adaptive RAG answer:       {adaptive_summary['answer'][:160]!r}")
+        print(f"  Agentic Multi-Hop RAG answer: {agentic_summary['answer'][:160]!r}")
 
         adaptive_route_counts[adaptive_trace.route] = adaptive_route_counts.get(adaptive_trace.route, 0) + 1
         if adaptive_summary["total_cost_usd"] is not None:
@@ -336,8 +337,8 @@ def main() -> None:
                 "question_type": record.question_type,
                 "hop_count": oracle_hop_count,
                 "gold_docs_total": len(gold_ids),
-                "adaptive": adaptive_summary,
-                "always_agentic": agentic_summary,
+                "adaptive_rag": adaptive_summary,
+                "agentic_multi_hop": agentic_summary,
                 "evidence_comparison": evidence_comparison,
                 "under_routed_failure": is_under_routed_failure,
             }
@@ -346,7 +347,7 @@ def main() -> None:
     n = len(records)
     artifact = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "purpose": "Phase 8B Adaptive vs Always-Agentic DEVELOPMENT smoke comparison "
+        "purpose": "Phase 8B Adaptive RAG vs Agentic Multi-Hop RAG DEVELOPMENT smoke comparison "
                    "(NOT the full development generation benchmark)",
         "split": "development",
         "n_questions": n,
@@ -355,13 +356,13 @@ def main() -> None:
         "generation_model": mantle_config["generation"]["model_id"],
         "router_thresholds": {"stage1": stage1_model.threshold, "stage2": stage2_model.threshold},
         "adaptive_route_distribution": adaptive_route_counts,
-        "adaptive_total_cost_usd": adaptive_total_cost,
-        "always_agentic_total_cost_usd": agentic_total_cost,
+        "adaptive_rag_total_cost_usd": adaptive_total_cost,
+        "agentic_multi_hop_total_cost_usd": agentic_total_cost,
         "cost_reduction_pct": (
             (agentic_total_cost - adaptive_total_cost) / agentic_total_cost if agentic_total_cost > 0 else None
         ),
-        "adaptive_mean_latency_ms": adaptive_total_latency / n,
-        "always_agentic_mean_latency_ms": agentic_total_latency / n,
+        "adaptive_rag_mean_latency_ms": adaptive_total_latency / n,
+        "agentic_multi_hop_mean_latency_ms": agentic_total_latency / n,
         "latency_reduction_pct": (
             (agentic_total_latency - adaptive_total_latency) / agentic_total_latency
             if agentic_total_latency > 0 else None
@@ -376,10 +377,10 @@ def main() -> None:
 
     print(f"\n{'=' * 70}")
     print(f"Adaptive route distribution: {adaptive_route_counts}")
-    print(f"Adaptive cost=${adaptive_total_cost:.6f} vs Always-Agentic cost=${agentic_total_cost:.6f} "
+    print(f"Adaptive RAG cost=${adaptive_total_cost:.6f} vs Agentic Multi-Hop RAG cost=${agentic_total_cost:.6f} "
           f"({artifact['cost_reduction_pct']:.1%} reduction)" if artifact["cost_reduction_pct"] is not None else "")
-    print(f"Adaptive mean latency={artifact['adaptive_mean_latency_ms']:.0f}ms vs "
-          f"Always-Agentic mean latency={artifact['always_agentic_mean_latency_ms']:.0f}ms")
+    print(f"Adaptive RAG mean latency={artifact['adaptive_rag_mean_latency_ms']:.0f}ms vs "
+          f"Agentic Multi-Hop RAG mean latency={artifact['agentic_multi_hop_mean_latency_ms']:.0f}ms")
     print(f"Under-routed failures: {under_routed_failures}")
     print(f"Wrote {out_path}")
 

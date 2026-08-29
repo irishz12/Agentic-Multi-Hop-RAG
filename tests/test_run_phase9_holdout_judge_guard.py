@@ -1,7 +1,8 @@
 """Structural guard for scripts/run_phase9_holdout_judge.py: restricted to
-always_agentic/adaptive, reads only already-completed holdout checkpoints
-(never final_holdout.json directly), never passes a pipeline-identifying
-value into call_judge, and only writes its own checkpoint files.
+agentic_multi_hop/adaptive_rag, reads only already-completed holdout
+checkpoints (never final_holdout.json directly), never passes a
+pipeline-identifying value into call_judge, and only writes its own
+checkpoint files.
 """
 
 from __future__ import annotations
@@ -20,9 +21,9 @@ def _load_module():
     return module
 
 
-def test_pipelines_restricted_to_always_agentic_and_adaptive_only():
+def test_pipelines_restricted_to_agentic_multi_hop_and_adaptive_rag_only():
     module = _load_module()
-    assert module.PIPELINES == ("always_agentic", "adaptive")
+    assert module.PIPELINES == ("agentic_multi_hop", "adaptive_rag")
 
 
 def test_script_never_opens_final_holdout_json_directly():

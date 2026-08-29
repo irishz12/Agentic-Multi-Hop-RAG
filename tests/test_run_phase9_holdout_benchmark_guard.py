@@ -1,8 +1,8 @@
 """Structural guard for scripts/run_phase9_holdout_benchmark.py: MUST
 target final_holdout.json (the deliberate exception), MUST restrict
-PIPELINES to only always_agentic/adaptive (never re-running Dense/Hybrid/
-Hybrid+Reranker against holdout), and must only write its own checkpoint
-files.
+PIPELINES to only agentic_multi_hop/adaptive_rag (never re-running Dense/
+Hybrid/Hybrid+Reranker against holdout), and must only write its own
+checkpoint files.
 """
 
 from __future__ import annotations
@@ -26,9 +26,9 @@ def test_holdout_split_file_constant_is_final_holdout():
     assert module.HOLDOUT_SPLIT_FILE == "final_holdout.json"
 
 
-def test_pipelines_restricted_to_always_agentic_and_adaptive_only():
+def test_pipelines_restricted_to_agentic_multi_hop_and_adaptive_rag_only():
     module = _load_module()
-    assert module.PIPELINES == ("always_agentic", "adaptive")
+    assert module.PIPELINES == ("agentic_multi_hop", "adaptive_rag")
     assert "dense" not in module.PIPELINES
     assert "hybrid" not in module.PIPELINES
     assert "hybrid_reranker" not in module.PIPELINES

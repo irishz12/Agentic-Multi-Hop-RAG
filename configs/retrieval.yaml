@@ -1,4 +1,4 @@
-# Retrieval configuration — Adaptive Multi-Hop Retrieval.
+# Retrieval configuration — Agentic Multi-Hop RAG.
 # Phase 2 added the dense Vector RAG baseline; Phase 3 extends the SAME
 # Qdrant collection (see qdrant.collection_name) with a named BM25 sparse
 # vector, so dense/BM25/hybrid all read from one collection.

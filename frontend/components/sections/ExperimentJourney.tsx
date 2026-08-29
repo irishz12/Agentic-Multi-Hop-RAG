@@ -27,7 +27,7 @@ export function ExperimentJourney({ retrievalEval, holdout }: ExperimentJourneyP
     {
       title: "Agentic Multi-Hop RAG",
       body: "A bounded, evidence-checking loop replaces one retrieval pass with up to three — the main system, measured once on final holdout.",
-      metric: `${formatScore(holdout.combined_quality_mean.always_agentic ?? 0)} answer quality`,
+      metric: `${formatScore(holdout.combined_quality_mean.agentic_multi_hop ?? 0)} answer quality`,
     },
     {
       title: "Adaptive RAG",

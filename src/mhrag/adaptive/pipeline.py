@@ -1,4 +1,4 @@
-"""RUNTIME Adaptive Cost-Aware pipeline — Phase 8B.
+"""RUNTIME Adaptive RAG pipeline — Phase 8B.
 
     Question
       -> Hybrid (Dense + BM25 + deterministic RRF, k=60)   [retrieval call 1]
@@ -281,7 +281,7 @@ def _trace_from_direct_generation(
     """Shared trace assembly for SIMPLE/MEDIUM — both skip the agentic loop
     entirely (no controller call), going straight from the frozen router's
     decision to the SAME Qwen final-generation call COMPLEX and
-    Always-Agentic use."""
+    Agentic Multi-Hop RAG use."""
     usage = generation.mantle_response.usage
     return AdaptiveTrace(
         question=question, route=route,

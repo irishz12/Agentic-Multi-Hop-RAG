@@ -25,7 +25,7 @@ Two modes:
       script does NOT decide pass/fail on its own; a human reviews the
       verdicts before the full run proceeds.
 
-  --pipeline {dense,hybrid,hybrid_reranker,always_agentic,adaptive}
+  --pipeline {dense,hybrid,hybrid_reranker,agentic_multi_hop,adaptive_rag}
       Scores every NON-null_query record in the corresponding
       results/phase9_{pipeline}_raw.json (must already exist — this script
       never generates pipeline answers itself). null_query is excluded
@@ -56,9 +56,10 @@ from datetime import datetime, timezone
 
 from mhrag.config import PROJECT_ROOT, load_config
 from mhrag.eval.judge import call_judge
+from mhrag.eval.legacy_pipeline_names import to_legacy_name
 from mhrag.generation.mantle_client import MantleClient, MantleConfigError
 
-PIPELINES = ("dense", "hybrid", "hybrid_reranker", "always_agentic", "adaptive")
+PIPELINES = ("dense", "hybrid", "hybrid_reranker", "agentic_multi_hop", "adaptive_rag")
 
 _SYNTHETIC_VALIDATION_CASES = [
     {
@@ -125,17 +126,21 @@ def _run_validate() -> None:
 
     cases = list(_SYNTHETIC_VALIDATION_CASES)
 
+    # adaptive_smoke_comparison.json is an already-frozen Phase 8B artifact —
+    # its per-record keys are still the legacy "adaptive"/"always_agentic"
+    # (see mhrag.eval.legacy_pipeline_names); everything this script itself
+    # writes below (case_id) uses the canonical name instead.
     smoke_path = PROJECT_ROOT / "results" / "adaptive_smoke_comparison.json"
     if smoke_path.exists():
         smoke = json.loads(smoke_path.read_text())
         for r in smoke["results"]:
-            for pipeline_key in ("adaptive", "always_agentic"):
+            for canonical_pipeline in ("adaptive_rag", "agentic_multi_hop"):
                 cases.append(
                     {
-                        "case_id": f"phase8b_{pipeline_key}_{r['qa_id']}",
+                        "case_id": f"phase8b_{canonical_pipeline}_{r['qa_id']}",
                         "question": r["query"],
                         "gold_answer": None,  # filled below from dev_subset.json
-                        "candidate_answer": r[pipeline_key]["answer"],
+                        "candidate_answer": r[to_legacy_name(canonical_pipeline)]["answer"],
                         "expected_grade": None,
                         "qa_id": r["qa_id"],
                     }

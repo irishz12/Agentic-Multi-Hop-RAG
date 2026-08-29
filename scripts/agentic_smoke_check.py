@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""LIVE Always-Agentic Multi-Hop Retrieval smoke check.
+"""LIVE Agentic Multi-Hop RAG smoke check.
 
 Makes REAL API calls (GLM 4.7 Flash controller + Qwen final answer) to
 Amazon Bedrock Mantle and incurs REAL (small) cost. Connectivity/behavior

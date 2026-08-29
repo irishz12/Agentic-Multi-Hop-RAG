@@ -31,8 +31,8 @@ from datetime import datetime, timezone
 
 from mhrag.config import PROJECT_ROOT, load_config
 
-# Every file whose content governs Always-Agentic / Adaptive pipeline behavior for the
-# holdout evaluation. Config files (model ids, pricing, retrieval/agent/judge settings),
+# Every file whose content governs Agentic Multi-Hop RAG / Adaptive RAG pipeline behavior
+# for the holdout evaluation. Config files (model ids, pricing, retrieval/agent/judge settings),
 # the frozen Phase 8A.2 router artifact (weights + thresholds), every prompt template
 # module, and the core pipeline/routing/eval source modules that execute them.
 FROZEN_FILES = (

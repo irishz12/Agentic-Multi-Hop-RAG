@@ -18,7 +18,7 @@ import requests
 DEFAULT_BASE_URL = "https://huggingface.co/datasets/yixuantt/MultiHopRAG/resolve/main"
 CORPUS_FILENAME = "corpus.json"
 QA_FILENAME = "MultiHopRAG.json"
-USER_AGENT = "adaptive-multi-hop-retrieval/0.1"
+USER_AGENT = "agentic-multi-hop-rag/0.1"
 
 
 @dataclass(frozen=True)

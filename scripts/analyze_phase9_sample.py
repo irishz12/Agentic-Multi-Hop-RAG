@@ -4,16 +4,24 @@ calls, no Mantle client. Combines:
 
   - results/phase9_sample.json (the frozen 50-qa_id selection)
   - results/phase9_{pipeline}_raw.json x5 (already-completed pipeline traces)
-  - results/phase9_judge_{pipeline}.json x3 (hybrid_reranker/always_agentic/
-    adaptive — the only 3 pipelines judged, per spec)
+  - results/phase9_judge_{pipeline}.json x3 (hybrid_reranker/agentic_multi_hop/
+    adaptive_rag — the only 3 pipelines judged, per spec)
   - data/processed/dev_subset.json (gold evidence, read-only, for evidence-
     coverage scoring — same "score strictly AFTER the fact" pattern as
     mhrag.routing.gate_analysis / Phase 8B's smoke comparison script)
 
 into one report: deterministic metrics (normalized EM / token F1 /
 abstention) for all 5 pipelines, judge scores for the 3 judged pipelines,
-Adaptive vs Always-Agentic quality retention, breakdowns by query type and
-hop count, and an under-routed-failure list.
+Adaptive RAG vs Agentic Multi-Hop RAG quality retention, breakdowns by
+query type and hop count, and an under-routed-failure list.
+
+The already-frozen results/phase9_sample_report.json this script produced
+still uses this project's legacy pipeline names (`always_agentic`,
+`adaptive`) — see `mhrag.eval.legacy_pipeline_names` for why it's never
+rewritten. Reading the pre-existing per-pipeline raw/judge files (which are
+ALSO named with those legacy pipeline names) is the one place this script
+still needs them; every canonical PIPELINES/JUDGED_PIPELINES name below is
+translated at that one boundary and nowhere else.
 
 Writes results/phase9_sample_report.json.
 
@@ -31,20 +39,21 @@ from mhrag.data.benchmark import qa_id
 from mhrag.data.loader import load_qa_records
 from mhrag.eval.answer_metrics import exact_match, is_abstention, token_f1
 from mhrag.eval.ground_truth import gold_doc_ids
+from mhrag.eval.legacy_pipeline_names import to_legacy_name
 
-PIPELINES = ("dense", "hybrid", "hybrid_reranker", "always_agentic", "adaptive")
-JUDGED_PIPELINES = ("hybrid_reranker", "always_agentic", "adaptive")
+PIPELINES = ("dense", "hybrid", "hybrid_reranker", "agentic_multi_hop", "adaptive_rag")
+JUDGED_PIPELINES = ("hybrid_reranker", "agentic_multi_hop", "adaptive_rag")
 SAMPLE_PATH = "results/phase9_sample.json"
 DEV_SPLIT_FILE = "dev_subset.json"
 
 
 def _load_sample_records(pipeline: str, sample_ids: set[str]) -> dict[str, dict]:
-    raw = json.loads((PROJECT_ROOT / "results" / f"phase9_{pipeline}_raw.json").read_text())
+    raw = json.loads((PROJECT_ROOT / "results" / f"phase9_{to_legacy_name(pipeline)}_raw.json").read_text())
     return {r["qa_id"]: r for r in raw["records"] if r["qa_id"] in sample_ids}
 
 
 def _load_judge_scores(pipeline: str) -> dict[str, dict]:
-    d = json.loads((PROJECT_ROOT / "results" / f"phase9_judge_{pipeline}.json").read_text())
+    d = json.loads((PROJECT_ROOT / "results" / f"phase9_judge_{to_legacy_name(pipeline)}.json").read_text())
     return {r["qa_id"]: r for r in d["records"]}
 
 
@@ -106,9 +115,9 @@ def main() -> None:
         p: sum(combined_quality(p, qid) for qid in sample_ids) / 50 for p in JUDGED_PIPELINES
     }
 
-    # --- item 3: Adaptive quality retention vs Always-Agentic ------------------------------
-    adaptive_quality = combined_quality_mean["adaptive"]
-    agentic_quality = combined_quality_mean["always_agentic"]
+    # --- item 3: Adaptive RAG quality retention vs Agentic Multi-Hop RAG -------------------
+    adaptive_quality = combined_quality_mean["adaptive_rag"]
+    agentic_quality = combined_quality_mean["agentic_multi_hop"]
     quality_retention_pct = (adaptive_quality / agentic_quality) if agentic_quality > 0 else None
 
     # --- evidence/retrieval coverage (gold docs found in the chunks actually used) ----------
@@ -125,10 +134,10 @@ def main() -> None:
         evidence_coverage_mean[p] = sum(vals) / len(vals)
 
     # --- item 5/6: cost/latency reduction (already established this session) ---------------
-    ag_costs = [pipeline_records["always_agentic"][qid]["total_cost_usd"] for qid in sample_ids]
-    ad_costs = [pipeline_records["adaptive"][qid]["total_cost_usd"] for qid in sample_ids]
-    ag_lat = [pipeline_records["always_agentic"][qid]["total_latency_ms"] for qid in sample_ids]
-    ad_lat = [pipeline_records["adaptive"][qid]["total_latency_ms"] for qid in sample_ids]
+    ag_costs = [pipeline_records["agentic_multi_hop"][qid]["total_cost_usd"] for qid in sample_ids]
+    ad_costs = [pipeline_records["adaptive_rag"][qid]["total_cost_usd"] for qid in sample_ids]
+    ag_lat = [pipeline_records["agentic_multi_hop"][qid]["total_latency_ms"] for qid in sample_ids]
+    ad_lat = [pipeline_records["adaptive_rag"][qid]["total_latency_ms"] for qid in sample_ids]
     mean_ag_cost, mean_ad_cost = sum(ag_costs) / 50, sum(ad_costs) / 50
     mean_ag_lat, mean_ad_lat = sum(ag_lat) / 50, sum(ad_lat) / 50
     cost_reduction_pct = (mean_ag_cost - mean_ad_cost) / mean_ag_cost
@@ -155,23 +164,23 @@ def main() -> None:
         lambda r: f"hop{hop_count(r)}" if r.question_type != "null_query" else "null"
     )
 
-    # --- item 8: under-routed Adaptive failures ---------------------------------------------
+    # --- item 8: under-routed Adaptive RAG failures -----------------------------------------
     under_routed_failures = []
     for qid in non_null_ids:
-        route = pipeline_records["adaptive"][qid]["predicted_route"]
+        route = pipeline_records["adaptive_rag"][qid]["predicted_route"]
         if route not in ("SIMPLE", "MEDIUM"):
             continue
-        ad_score = judge_scores["adaptive"][qid]["score"]
-        ag_score = judge_scores["always_agentic"][qid]["score"]
-        ad_cov = evidence_coverage("adaptive", qid)
-        ag_cov = evidence_coverage("always_agentic", qid)
+        ad_score = judge_scores["adaptive_rag"][qid]["score"]
+        ag_score = judge_scores["agentic_multi_hop"][qid]["score"]
+        ad_cov = evidence_coverage("adaptive_rag", qid)
+        ag_cov = evidence_coverage("agentic_multi_hop", qid)
         if ad_score < ag_score or ad_cov < ag_cov:
             under_routed_failures.append(
                 {
                     "qa_id": qid, "question_type": dev_by_qa_id[qid].question_type,
                     "hop_count": hop_count(dev_by_qa_id[qid]), "route": route,
-                    "adaptive_judge_score": ad_score, "always_agentic_judge_score": ag_score,
-                    "adaptive_evidence_coverage": ad_cov, "always_agentic_evidence_coverage": ag_cov,
+                    "adaptive_rag_judge_score": ad_score, "agentic_multi_hop_judge_score": ag_score,
+                    "adaptive_rag_evidence_coverage": ad_cov, "agentic_multi_hop_evidence_coverage": ag_cov,
                 }
             )
 
@@ -195,11 +204,11 @@ def main() -> None:
         "deterministic_metrics": deterministic_metrics,
         "judge_scores": judge_summary,
         "combined_quality_mean": combined_quality_mean,
-        "adaptive_quality_retention_pct_vs_always_agentic": quality_retention_pct,
+        "adaptive_quality_retention_pct_vs_agentic_multi_hop": quality_retention_pct,
         "evidence_coverage_mean": evidence_coverage_mean,
         "cost_latency": {
-            "always_agentic_mean_cost_usd": mean_ag_cost, "adaptive_mean_cost_usd": mean_ad_cost,
-            "always_agentic_mean_latency_ms": mean_ag_lat, "adaptive_mean_latency_ms": mean_ad_lat,
+            "agentic_multi_hop_mean_cost_usd": mean_ag_cost, "adaptive_rag_mean_cost_usd": mean_ad_cost,
+            "agentic_multi_hop_mean_latency_ms": mean_ag_lat, "adaptive_rag_mean_latency_ms": mean_ad_lat,
             "cost_reduction_pct": cost_reduction_pct, "latency_reduction_pct": latency_reduction_pct,
         },
         "breakdown_by_question_type": breakdown_by_question_type,

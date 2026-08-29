@@ -25,7 +25,7 @@ from mhrag.config import PROJECT_ROOT, load_config
 from mhrag.data.benchmark import qa_id
 from mhrag.data.loader import load_qa_records
 from mhrag.retrieval.schema import RetrievalResult
-from mhrag.routing.cost_projection import UnitCost, always_agentic_projection, project_workload
+from mhrag.routing.cost_projection import UnitCost, agentic_multi_hop_projection, project_workload
 from mhrag.routing.gate_analysis import analyze_gate_verdict
 from mhrag.routing.metrics import (
     accuracy,
@@ -166,7 +166,7 @@ def main() -> None:
     print(f"Gate 2 outcomes: {gate2_outcomes}")
     print(f"False-sufficiency events (dangerous): {len(false_sufficiency_examples)}")
 
-    # --- cost projection (Phase 8A.1's predicted distribution vs Always-Agentic) ---
+    # --- cost projection (Phase 8A.1's predicted distribution vs Agentic Multi-Hop RAG) ---
     predicted_route_counts = {r: phase8a1_predicted.count(r) for r in ("SIMPLE", "MEDIUM", "COMPLEX")}
     retrieval_eval = json.loads((PROJECT_ROOT / "results" / "retrieval_eval_development.json").read_text())
     hybrid_latency = retrieval_eval["latency_ms"]["hybrid_retrieval"]["mean"]
@@ -179,10 +179,10 @@ def main() -> None:
         "agentic": UnitCost(cost_usd=agentic_metrics["mean_cost_usd"], latency_ms=agentic_metrics["mean_latency_ms"]),
     }
     routed_projection = project_workload(predicted_route_counts, unit_costs)
-    always_agentic = always_agentic_projection(n, unit_costs["agentic"])
+    agentic_multi_hop = agentic_multi_hop_projection(n, unit_costs["agentic"])
 
     print(f"\nPredicted distribution: {predicted_route_counts}")
-    print(f"Routed cost=${routed_projection.total_cost_usd:.4f} vs Always-Agentic=${always_agentic.total_cost_usd:.4f}")
+    print(f"Routed cost=${routed_projection.total_cost_usd:.4f} vs Agentic Multi-Hop RAG=${agentic_multi_hop.total_cost_usd:.4f}")
     print(f"NOTE: correctness (accuracy={phase8a1_metrics['accuracy']:.1%}) and cost savings are reported "
           f"separately — savings partly reflect over-routing bias (COMPLEX over-predicted), NOT purely "
           f"efficient correct routing.")
@@ -218,11 +218,11 @@ def main() -> None:
                 "total_latency_ms": routed_projection.total_latency_ms,
                 "mean_latency_ms": routed_projection.mean_latency_ms,
             },
-            "always_agentic": {
-                "total_cost_usd": always_agentic.total_cost_usd,
-                "mean_cost_usd": always_agentic.mean_cost_usd,
-                "total_latency_ms": always_agentic.total_latency_ms,
-                "mean_latency_ms": always_agentic.mean_latency_ms,
+            "agentic_multi_hop": {
+                "total_cost_usd": agentic_multi_hop.total_cost_usd,
+                "mean_cost_usd": agentic_multi_hop.mean_cost_usd,
+                "total_latency_ms": agentic_multi_hop.total_latency_ms,
+                "mean_latency_ms": agentic_multi_hop.mean_latency_ms,
             },
             "caveat": "correctness and cost savings are reported separately; savings are NOT claimed as "
                       "successful efficiency if caused by under-routing (or, here, largely by over-routing "

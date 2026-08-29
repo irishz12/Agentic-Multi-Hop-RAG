@@ -73,8 +73,8 @@ export const PIPELINE_LABEL: Record<string, string> = {
   dense: "Dense RAG",
   hybrid: "Hybrid RAG",
   hybrid_reranker: "Hybrid + Reranker",
-  always_agentic: "Agentic Multi-Hop RAG",
-  adaptive: "Adaptive RAG",
+  agentic_multi_hop: "Agentic Multi-Hop RAG",
+  adaptive_rag: "Adaptive RAG",
 };
 
 // Fixed, never re-cycled per chart — the same identity color for a given
@@ -85,6 +85,6 @@ export const PIPELINE_COLOR: Record<string, string> = {
   dense: "#B0B0B0",
   hybrid: "#808080",
   hybrid_reranker: "#4D4D4D",
-  always_agentic: "#0F5AA8",
-  adaptive: "#B8620A",
+  agentic_multi_hop: "#0F5AA8",
+  adaptive_rag: "#B8620A",
 };

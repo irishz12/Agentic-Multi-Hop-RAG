@@ -8,18 +8,10 @@ a cost-optimized variant that routes each question through the cheapest
 retrieval strategy a learned classifier judges sufficient, falling back to the
 full agentic loop only when needed.
 
-> **Naming note.** Internally (code, config, and result-file names) this
-> project still uses its original working names: the main agentic system is
-> `always_agentic` / "Always-Agentic", and the router-based variant is
-> `adaptive`. This README's portfolio names — **Agentic Multi-Hop RAG** and
-> **Adaptive RAG** — refer to the exact same two systems; nothing about their
-> retrieval logic, prompts, models, or thresholds changed for this rename,
-> only the presentation layer (this document and its charts).
-
-Both systems are compared against three single-pass retrieval baselines
-(Dense, Hybrid, Hybrid + Reranker) on answer quality, evidence coverage,
-cost, and latency — measured on a development sample and, once, on a
-one-time final holdout evaluation.
+Agentic Multi-Hop RAG is compared against four baselines — Dense RAG,
+Hybrid RAG, Hybrid + Reranker, and Adaptive RAG — on answer quality,
+evidence coverage, cost, and latency, measured on a development sample and,
+once, on a one-time final holdout evaluation.
 
 ## 1. Problem
 
@@ -54,12 +46,13 @@ flowchart TD
     end
 
     subgraph Agentic["Agentic Multi-Hop RAG: main system"]
-        AQ["Question"] --> AH["Hybrid + Reranker, hop 1"]
-        AH --> AC{"GLM Controller: evidence sufficient?"}
-        AC -->|"No, hops < 3"| AF["Focused follow-up query, Hybrid + Reranker"]
-        AF --> AM["Merge + dedupe evidence"]
-        AM --> AC
-        AC -->|"Yes, or 3 hops, or budget/timeout"| AA["Qwen final answer"]
+        AQ["Question"] --> AH["Hybrid Dense + BM25 Retrieval"]
+        AH --> ARRF["Reciprocal Rank Fusion, k=60"]
+        ARRF --> AR["Cross-Encoder Reranking, hop 1"]
+        AR --> AC{"Evidence Sufficiency, GLM Controller"}
+        AC -->|"Insufficient, hops < 3"| AF["Targeted follow-up retrieval"]
+        AF --> AH
+        AC -->|"Sufficient, or 3 hops reached, or budget/timeout"| AA["Final answer generation, Qwen"]
     end
 
     subgraph AdaptiveRAG["Adaptive RAG: learned cost-aware router"]
@@ -106,7 +99,12 @@ seeded deterministically:
 `answer`/`evidence_list` are loaded and preserved strictly for offline
 evaluation — never passed to retrieval, routing, the agent, or generation.
 
-## 5. Baselines: Dense / Hybrid / Reranker / Adaptive
+## 5. Baselines
+
+Agentic Multi-Hop RAG is measured against four baselines: **1. Dense RAG**,
+**2. Hybrid RAG**, **3. Hybrid + Reranker**, and **4. Adaptive RAG** (§6) —
+a cost-optimized router-based alternative to the main system, not a
+single-pass method itself.
 
 Retrieval quality on the 265 non-null **development** questions
 (`results/retrieval_eval_development.json`):
@@ -120,10 +118,6 @@ Retrieval quality on the 265 non-null **development** questions
 Hybrid improves over Dense alone; the reranker trades a little Recall@10 (its
 fixed 20-candidate depth can't recover evidence RRF never surfaced) for
 better top-of-ranking precision (MRR@10/NDCG@10 both improve).
-
-**Adaptive RAG** (§6) is also, in this framing, a "baseline" against the
-main agentic system — a cheaper alternative whose quality/cost trade-off is
-this project's central measurement (§9–10).
 
 ## 6. Agentic Multi-Hop RAG design
 
@@ -407,21 +401,21 @@ python scripts/select_phase9_sample.py
 python scripts/run_phase9_benchmark.py --pipeline dense
 python scripts/run_phase9_benchmark.py --pipeline hybrid
 python scripts/run_phase9_benchmark.py --pipeline hybrid_reranker
-python scripts/run_phase9_benchmark.py --pipeline always_agentic
-python scripts/run_phase9_benchmark.py --pipeline adaptive
+python scripts/run_phase9_benchmark.py --pipeline agentic_multi_hop
+python scripts/run_phase9_benchmark.py --pipeline adaptive_rag
 python scripts/run_phase9_judge.py --pipeline hybrid_reranker
-python scripts/run_phase9_judge.py --pipeline always_agentic
-python scripts/run_phase9_judge.py --pipeline adaptive
+python scripts/run_phase9_judge.py --pipeline agentic_multi_hop
+python scripts/run_phase9_judge.py --pipeline adaptive_rag
 python scripts/analyze_phase9_sample.py
 
 # Final holdout — ALREADY RUN AND CONSUMED (results/final_holdout_consumed.json).
 # Shown here for reference only; do not re-run against the same holdout file.
 python scripts/freeze_final_evaluation_manifest.py
 python scripts/select_phase9_holdout_sample.py
-python scripts/run_phase9_holdout_benchmark.py --pipeline always_agentic
-python scripts/run_phase9_holdout_benchmark.py --pipeline adaptive
-python scripts/run_phase9_holdout_judge.py --pipeline always_agentic
-python scripts/run_phase9_holdout_judge.py --pipeline adaptive
+python scripts/run_phase9_holdout_benchmark.py --pipeline agentic_multi_hop
+python scripts/run_phase9_holdout_benchmark.py --pipeline adaptive_rag
+python scripts/run_phase9_holdout_judge.py --pipeline agentic_multi_hop
+python scripts/run_phase9_holdout_judge.py --pipeline adaptive_rag
 python scripts/analyze_phase9_holdout.py
 python scripts/mark_final_holdout_consumed.py
 

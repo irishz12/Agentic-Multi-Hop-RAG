@@ -29,11 +29,12 @@ from datetime import datetime, timezone
 from mhrag.config import PROJECT_ROOT, load_config
 from mhrag.data.benchmark import qa_id
 from mhrag.data.loader import load_qa_records
+from mhrag.eval.legacy_pipeline_names import to_legacy_name
 from mhrag.eval.phase9_sample import PHASE9_SAMPLE_SEED, PHASE9_SAMPLE_SIZE, dataset_hash, select_phase9_sample
 
 DEV_SPLIT_FILE = "dev_subset.json"
 SAMPLE_OUTPUT_PATH = "results/phase9_sample.json"
-PIPELINES = ("dense", "hybrid", "hybrid_reranker", "always_agentic", "adaptive")
+PIPELINES = ("dense", "hybrid", "hybrid_reranker", "agentic_multi_hop", "adaptive_rag")
 
 
 def main() -> None:
@@ -54,7 +55,7 @@ def main() -> None:
     # --- reuse check against existing pipeline checkpoints (read-only) ---
     reuse_report: dict[str, dict] = {}
     for pipeline in PIPELINES:
-        raw_path = PROJECT_ROOT / "results" / f"phase9_{pipeline}_raw.json"
+        raw_path = PROJECT_ROOT / "results" / f"phase9_{to_legacy_name(pipeline)}_raw.json"
         if not raw_path.exists():
             reuse_report[pipeline] = {
                 "checkpoint_exists": False, "n_completed_total": 0,

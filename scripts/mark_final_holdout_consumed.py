@@ -48,8 +48,8 @@ def main() -> None:
     marker = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "purpose": "FINAL HOLDOUT evaluation — CONSUMED marker. final_holdout.json has been used for "
-                   "its one-time Phase 9 evaluation (Adaptive vs Always-Agentic, 50-question stratified "
-                   "sample). No further tuning is permitted based on these results.",
+                   "its one-time Phase 9 evaluation (Adaptive RAG vs Agentic Multi-Hop RAG, 50-question "
+                   "stratified sample). No further tuning is permitted based on these results.",
         "status": "CONSUMED",
         "sample_seed": report["sample_seed"],
         "sample_size": report["sample_size"],

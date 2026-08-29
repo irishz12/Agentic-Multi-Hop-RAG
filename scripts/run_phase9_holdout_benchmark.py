@@ -1,8 +1,9 @@
 #!/usr/bin/env python
-"""FINAL HOLDOUT evaluation — LIVE Always-Agentic + Adaptive benchmark run
-over the frozen 50-question holdout sample, checkpointed per query.
+"""FINAL HOLDOUT evaluation — LIVE Agentic Multi-Hop RAG + Adaptive RAG
+benchmark run over the frozen 50-question holdout sample, checkpointed per
+query.
 
-Deliberately supports ONLY `always_agentic` and `adaptive` — Dense/Hybrid/
+Deliberately supports ONLY `agentic_multi_hop` and `adaptive_rag` — Dense/Hybrid/
 Hybrid+Reranker are NOT re-run against final_holdout (per the Phase 9
 holdout spec: "Do not run Dense/Hybrid/Reranker again"; their behavior was
 already fully characterized on the development sample).
@@ -29,8 +30,8 @@ Chunked execution (established CPU-quota-throttling workaround — never
 auto-backgrounded).
 
 Usage:
-    python scripts/run_phase9_holdout_benchmark.py --pipeline always_agentic
-    python scripts/run_phase9_holdout_benchmark.py --pipeline adaptive
+    python scripts/run_phase9_holdout_benchmark.py --pipeline agentic_multi_hop
+    python scripts/run_phase9_holdout_benchmark.py --pipeline adaptive_rag
 """
 
 from __future__ import annotations
@@ -55,7 +56,7 @@ from mhrag.routing.learned_router import LinearModel
 HOLDOUT_SPLIT_FILE = "final_holdout.json"
 HOLDOUT_SAMPLE_PATH = "results/phase9_holdout_sample.json"
 LEARNED_ROUTER_MODEL_PATH = "results/learned_router_model.json"  # READ-ONLY (Phase 8A.2 frozen artifact)
-PIPELINES = ("always_agentic", "adaptive")  # Dense/Hybrid/Hybrid+Reranker deliberately excluded
+PIPELINES = ("agentic_multi_hop", "adaptive_rag")  # Dense/Hybrid/Hybrid+Reranker deliberately excluded
 
 
 def _load_router_model(d: dict) -> LinearModel:
@@ -89,7 +90,7 @@ def _adaptive_summary(trace) -> dict:
 
 def _agentic_summary(trace) -> dict:
     return {
-        "predicted_route": "ALWAYS_AGENTIC",
+        "predicted_route": "AGENTIC_MULTI_HOP",
         "stage1_probability": None, "stage2_probability": None,
         "num_retrieval_calls": trace.num_retrieval_calls, "num_reranker_calls": trace.num_retrieval_calls,
         "num_agent_hops": trace.num_retrieval_calls, "num_controller_calls": trace.num_controller_calls,
@@ -210,7 +211,7 @@ def main() -> None:
     )
 
     stage1_model = stage2_model = None
-    if args.pipeline == "adaptive":
+    if args.pipeline == "adaptive_rag":
         router_model = json.loads((PROJECT_ROOT / LEARNED_ROUTER_MODEL_PATH).read_text())
         stage1_model = _load_router_model(router_model["stage1"])
         stage2_model = _load_router_model(router_model["stage2"])
@@ -225,13 +226,13 @@ def main() -> None:
         gold_ids = gold_doc_ids(record)
         rec_hop_count = hop_count(record)
 
-        if args.pipeline == "always_agentic":
+        if args.pipeline == "agentic_multi_hop":
             trace = run_agentic_retrieval(
                 record.query, qdrant_client, collection_name, embedding_model, bm25_model, reranker,
                 controller_client, generation_client, config=agentic_config,
             )
             summary = _agentic_summary(trace)
-        else:  # adaptive
+        else:  # adaptive_rag
             trace = run_adaptive_pipeline(
                 record.query, qdrant_client, collection_name, embedding_model, bm25_model, reranker,
                 stage1_model, stage2_model, controller_client, generation_client, agentic_config=agentic_config,

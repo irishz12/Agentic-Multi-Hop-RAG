@@ -10,9 +10,9 @@ Five pipelines, selected via `--pipeline`:
                         defaults) -> Qwen answer
   - hybrid_reranker    : rerank_hybrid_search (+ BAAI/bge-reranker-base,
                         frozen candidate depth 20 -> top-5) -> Qwen answer
-  - always_agentic     : mhrag.agent.loop.run_agentic_retrieval, UNMODIFIED
-                        (the frozen Always-Agentic baseline)
-  - adaptive           : mhrag.adaptive.pipeline.run_adaptive_pipeline,
+  - agentic_multi_hop  : mhrag.agent.loop.run_agentic_retrieval, UNMODIFIED
+                        (the frozen Agentic Multi-Hop RAG baseline)
+  - adaptive_rag       : mhrag.adaptive.pipeline.run_adaptive_pipeline,
                         UNMODIFIED, using the FROZEN Phase 8A.2 router
                         (results/learned_router_model.json, tau1=0.63,
                         tau2=0.70 — never retrained or re-thresholded here)
@@ -51,12 +51,12 @@ project's long-running live jobs are NEVER auto-backgrounded): supports
 `--offset`/`--limit` to bound one invocation's question count.
 
 Requires `$OPENAI_API_KEY` in the environment (dense/hybrid pipelines
-still need it for the one Qwen call/question; always_agentic/adaptive also
-need it for the GLM controller). Never printed/logged/persisted.
+still need it for the one Qwen call/question; agentic_multi_hop/adaptive_rag
+also need it for the GLM controller). Never printed/logged/persisted.
 
 Usage:
     python scripts/run_phase9_benchmark.py --pipeline dense --offset 0 --limit 100
-    python scripts/run_phase9_benchmark.py --pipeline adaptive --offset 200
+    python scripts/run_phase9_benchmark.py --pipeline adaptive_rag --offset 200
 
 Writes results/phase9_{pipeline}_raw.json.
 """
@@ -87,7 +87,7 @@ from mhrag.routing.learned_router import LinearModel
 
 DEV_SPLIT_FILE = "dev_subset.json"
 LEARNED_ROUTER_MODEL_PATH = "results/learned_router_model.json"  # READ-ONLY (Phase 8A.2 frozen artifact)
-PIPELINES = ("dense", "hybrid", "hybrid_reranker", "always_agentic", "adaptive")
+PIPELINES = ("dense", "hybrid", "hybrid_reranker", "agentic_multi_hop", "adaptive_rag")
 GENERATION_TOP_K = 5
 
 
@@ -144,7 +144,7 @@ def _adaptive_summary(trace) -> dict:
 
 def _agentic_summary(trace) -> dict:
     return {
-        "predicted_route": "ALWAYS_AGENTIC",
+        "predicted_route": "AGENTIC_MULTI_HOP",
         "stage1_probability": None, "stage2_probability": None,
         "num_retrieval_calls": trace.num_retrieval_calls, "num_reranker_calls": trace.num_retrieval_calls,
         "num_agent_hops": trace.num_retrieval_calls, "num_controller_calls": trace.num_controller_calls,
@@ -210,8 +210,8 @@ def main() -> None:
         existing = {r["qa_id"]: r for r in json.loads(out_path.read_text()).get("records", [])}
         print(f"Found existing {out_path} with {len(existing)} completed record(s) — will skip those")
 
-    needs_reranker = args.pipeline in ("hybrid_reranker", "always_agentic", "adaptive")
-    needs_agentic = args.pipeline in ("always_agentic", "adaptive")
+    needs_reranker = args.pipeline in ("hybrid_reranker", "agentic_multi_hop", "adaptive_rag")
+    needs_agentic = args.pipeline in ("agentic_multi_hop", "adaptive_rag")
 
     print(f"\nLoading embedding model {retrieval_config['embedding']['model_name']} ...")
     embedding_model = EmbeddingModel(
@@ -279,7 +279,7 @@ def main() -> None:
     )
 
     stage1_model = stage2_model = None
-    if args.pipeline == "adaptive":
+    if args.pipeline == "adaptive_rag":
         router_model = json.loads((PROJECT_ROOT / LEARNED_ROUTER_MODEL_PATH).read_text())
         stage1_model = _load_router_model(router_model["stage1"])
         stage2_model = _load_router_model(router_model["stage2"])
@@ -313,14 +313,14 @@ def main() -> None:
                 final_top_k=GENERATION_TOP_K,
             )
             retrieval_latency_ms = (time.monotonic() - t0) * 1000
-        elif args.pipeline == "always_agentic":
+        elif args.pipeline == "agentic_multi_hop":
             trace = run_agentic_retrieval(
                 record.query, qdrant_client, collection_name, embedding_model, bm25_model, reranker,
                 controller_client, generation_client, config=agentic_config,
             )
             summary = _agentic_summary(trace)
             retrieved = None
-        else:  # adaptive
+        else:  # adaptive_rag
             trace = run_adaptive_pipeline(
                 record.query, qdrant_client, collection_name, embedding_model, bm25_model, reranker,
                 stage1_model, stage2_model, controller_client, generation_client, agentic_config=agentic_config,

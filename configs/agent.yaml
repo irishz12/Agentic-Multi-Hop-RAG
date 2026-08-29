@@ -1,4 +1,4 @@
-# Always-Agentic Multi-Hop Retrieval — bounded agent loop configuration.
+# Agentic Multi-Hop RAG — bounded agent loop configuration.
 #
 # Final-answer model/config is UNCHANGED from Phase 6 (configs/mantle.yaml:
 # generation) — this file configures the AGENT CONTROLLER and the loop's

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """FINAL HOLDOUT evaluation — LIVE judge scoring for the 44 non-null
-holdout-sample answers, `always_agentic` and `adaptive` only, checkpointed
-per (pipeline, qa_id).
+holdout-sample answers, `agentic_multi_hop` and `adaptive_rag` only,
+checkpointed per (pipeline, qa_id).
 
 Same FROZEN judge as the development-sample evaluation
 (`configs/judge.yaml`, unchanged: `openai.gpt-oss-120b`, temperature 0.0,
@@ -19,8 +19,8 @@ question/gold_answer text comes from the already-completed raw checkpoint,
 not a fresh file read.
 
 Usage:
-    python scripts/run_phase9_holdout_judge.py --pipeline always_agentic
-    python scripts/run_phase9_holdout_judge.py --pipeline adaptive
+    python scripts/run_phase9_holdout_judge.py --pipeline agentic_multi_hop
+    python scripts/run_phase9_holdout_judge.py --pipeline adaptive_rag
 
 Writes results/phase9_holdout_judge_{pipeline}.json.
 """
@@ -35,7 +35,7 @@ from mhrag.config import PROJECT_ROOT, load_config
 from mhrag.eval.judge import call_judge
 from mhrag.generation.mantle_client import MantleClient, MantleConfigError
 
-PIPELINES = ("always_agentic", "adaptive")
+PIPELINES = ("agentic_multi_hop", "adaptive_rag")
 
 
 def _build_judge_client() -> tuple[MantleClient, dict]:

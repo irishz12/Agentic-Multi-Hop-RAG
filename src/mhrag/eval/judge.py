@@ -11,7 +11,7 @@ FROZEN CONFIGURATION (Phase 9 spec: "keep judge configuration frozen"):
   - model: `openai.gpt-oss-120b` (see `configs/judge.yaml`) — deliberately
     a THIRD, distinct model from both `qwen.qwen3-next-80b-a3b-instruct`
     (produces every candidate answer being judged — never grades its own
-    output) and `zai.glm-4.7-flash` (the Always-Agentic/Adaptive
+    output) and `zai.glm-4.7-flash` (the Agentic Multi-Hop RAG/Adaptive RAG
     controller — judging is never done by the same model making routing
     decisions either).
   - temperature: 0.0, prompt version "v1" (`JUDGE_PROMPT_VERSION`).

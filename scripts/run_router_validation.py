@@ -19,7 +19,7 @@ compare against the prediction).
 Also produces the cost-aware workload projection (item 13 in the Phase 8A
 report): given the PREDICTED route distribution on router_validation,
 projects Hybrid-only / Hybrid+Reranker / Agentic workload counts and
-cost/latency, compared against Always-Agentic (100% Agentic) — using
+cost/latency, compared against Agentic Multi-Hop RAG (100% Agentic) — using
 unit costs already measured in earlier phases (does not run those
 pipelines again).
 
@@ -36,7 +36,7 @@ from datetime import datetime, timezone
 
 from mhrag.config import PROJECT_ROOT, load_config
 from mhrag.generation.mantle_client import MantleClient, MantleConfigError
-from mhrag.routing.cost_projection import UnitCost, always_agentic_projection, project_workload
+from mhrag.routing.cost_projection import UnitCost, agentic_multi_hop_projection, project_workload
 from mhrag.routing.features import QueryFeatures, RetrievalSignals, RouterFeatures
 from mhrag.routing.heuristic import HeuristicThresholds
 from mhrag.routing.metrics import (
@@ -167,13 +167,13 @@ def main() -> None:
         "agentic": UnitCost(cost_usd=agentic_metrics["mean_cost_usd"], latency_ms=agentic_metrics["mean_latency_ms"]),
     }
     routed_projection = project_workload(predicted_route_counts, unit_costs)
-    always_agentic = always_agentic_projection(n, unit_costs["agentic"])
+    agentic_multi_hop = agentic_multi_hop_projection(n, unit_costs["agentic"])
 
     print(f"\nPredicted route distribution: {predicted_route_counts}")
     print(f"Routed projection: cost=${routed_projection.total_cost_usd:.4f} "
           f"latency_total={routed_projection.total_latency_ms:.0f}ms")
-    print(f"Always-Agentic: cost=${always_agentic.total_cost_usd:.4f} "
-          f"latency_total={always_agentic.total_latency_ms:.0f}ms")
+    print(f"Agentic Multi-Hop RAG: cost=${agentic_multi_hop.total_cost_usd:.4f} "
+          f"latency_total={agentic_multi_hop.total_latency_ms:.0f}ms")
 
     report = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -212,11 +212,11 @@ def main() -> None:
                 "total_latency_ms": routed_projection.total_latency_ms,
                 "mean_latency_ms": routed_projection.mean_latency_ms,
             },
-            "always_agentic": {
-                "total_cost_usd": always_agentic.total_cost_usd,
-                "mean_cost_usd": always_agentic.mean_cost_usd,
-                "total_latency_ms": always_agentic.total_latency_ms,
-                "mean_latency_ms": always_agentic.mean_latency_ms,
+            "agentic_multi_hop": {
+                "total_cost_usd": agentic_multi_hop.total_cost_usd,
+                "mean_cost_usd": agentic_multi_hop.mean_cost_usd,
+                "total_latency_ms": agentic_multi_hop.total_latency_ms,
+                "mean_latency_ms": agentic_multi_hop.mean_latency_ms,
             },
         },
         "per_question": per_question,

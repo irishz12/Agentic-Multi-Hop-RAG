@@ -25,16 +25,16 @@ export function FailureAnalysis({ sample, holdout }: FailureAnalysisProps) {
           <h3 className="text-base font-medium text-ink">Temporal and comparison questions are the clearest weakness</h3>
           <p className="mt-2 max-w-[42rem] text-[1.0625rem] leading-relaxed text-ink-muted">
             On final holdout, temporal questions score{" "}
-            <span className="tnum font-data text-ink">{formatScore(holdoutTemporal.always_agentic_mean_quality, 2)}</span>{" "}
+            <span className="tnum font-data text-ink">{formatScore(holdoutTemporal.agentic_multi_hop_mean_quality, 2)}</span>{" "}
             for Agentic and{" "}
-            <span className="tnum font-data text-ink">{formatScore(holdoutTemporal.adaptive_mean_quality, 2)}</span>{" "}
+            <span className="tnum font-data text-ink">{formatScore(holdoutTemporal.adaptive_rag_mean_quality, 2)}</span>{" "}
             for Adaptive — the lowest of any category, on both systems, on both splits (development temporal quality
             for Adaptive was{" "}
-            <span className="tnum font-data text-ink">{formatScore(devTemporal.adaptive_mean_quality, 2)}</span>).
+            <span className="tnum font-data text-ink">{formatScore(devTemporal.adaptive_rag_mean_quality, 2)}</span>).
             Comparison questions score{" "}
-            <span className="tnum font-data text-ink">{formatScore(holdoutComparison.always_agentic_mean_quality, 2)}</span>{" "}
+            <span className="tnum font-data text-ink">{formatScore(holdoutComparison.agentic_multi_hop_mean_quality, 2)}</span>{" "}
             (Agentic) and{" "}
-            <span className="tnum font-data text-ink">{formatScore(holdoutComparison.adaptive_mean_quality, 2)}</span>{" "}
+            <span className="tnum font-data text-ink">{formatScore(holdoutComparison.adaptive_rag_mean_quality, 2)}</span>{" "}
             (Adaptive) — the second-weakest category, with Adaptive trailing Agentic by a visible margin. Neither
             weakness is new to Adaptive RAG; the router does not compensate for either.
           </p>

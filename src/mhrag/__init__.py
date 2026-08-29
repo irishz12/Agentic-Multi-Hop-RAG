@@ -1,6 +1,6 @@
-"""Adaptive Multi-Hop Retrieval.
+"""Agentic Multi-Hop RAG.
 
-Adaptive cost-aware agentic RAG, benchmarked on the MultiHop-RAG dataset.
+A cost-aware agentic RAG system, benchmarked on the MultiHop-RAG dataset.
 """
 
 __version__ = "0.1.0"

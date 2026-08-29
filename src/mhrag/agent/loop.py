@@ -1,4 +1,4 @@
-"""Always-Agentic Multi-Hop Retrieval: the bounded agent loop.
+"""Agentic Multi-Hop RAG: the bounded agent loop.
 
     Original Question
        -> Hybrid + RRF + Reranker           (hop 1 = initial retrieval)

@@ -79,12 +79,12 @@ def project_workload(route_counts: dict[str, int], unit_costs: dict[str, UnitCos
     )
 
 
-def always_agentic_projection(n_queries: int, agentic_unit_cost: UnitCost) -> WorkloadProjection:
-    """The comparison baseline: 100% of queries go through Agentic
-    retrieval — what Phase 7/7.1 already measured directly, expressed here
-    only for a like-for-like comparison against the routed projection."""
+def agentic_multi_hop_projection(n_queries: int, agentic_unit_cost: UnitCost) -> WorkloadProjection:
+    """The comparison baseline: 100% of queries go through Agentic Multi-Hop
+    RAG retrieval — what Phase 7/7.1 already measured directly, expressed
+    here only for a like-for-like comparison against the routed projection."""
     if n_queries <= 0:
-        raise ValueError("always_agentic_projection requires n_queries > 0")
+        raise ValueError("agentic_multi_hop_projection requires n_queries > 0")
     route_counts = {"SIMPLE": 0, "MEDIUM": 0, "COMPLEX": n_queries}
     unit_costs = {
         "hybrid_only": UnitCost(0.0, 0.0),

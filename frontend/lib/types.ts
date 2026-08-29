@@ -1,9 +1,12 @@
-// Types mirror the exact shape of the read-only JSON artifacts under
-// ../results/*.json — see lib/data.ts. Field names match the source files
-// verbatim so a diff between this file and the JSON is a fast way to spot
-// drift if a future analysis script changes an artifact's shape.
+// Types describe the CANONICAL shape this app works with — every field
+// name here uses this project's current pipeline names. The read-only JSON
+// artifacts under ../results/*.json are immutable and still use two legacy
+// pipeline names (`always_agentic`, `adaptive`); lib/data.ts is the one
+// place that reads their raw shape and rekeys it to what's declared here
+// (see lib/legacyPipelineNames.ts). Every other field name matches the
+// source files verbatim.
 
-export type PipelineKey = "dense" | "hybrid" | "hybrid_reranker" | "always_agentic" | "adaptive";
+export type PipelineKey = "dense" | "hybrid" | "hybrid_reranker" | "agentic_multi_hop" | "adaptive_rag";
 
 export interface DeterministicMetrics {
   normalized_exact_match: number;
@@ -32,10 +35,10 @@ export interface HoldoutJudgeScore {
 }
 
 export interface CostLatency {
-  always_agentic_mean_cost_usd: number;
-  adaptive_mean_cost_usd: number;
-  always_agentic_mean_latency_ms: number;
-  adaptive_mean_latency_ms: number;
+  agentic_multi_hop_mean_cost_usd: number;
+  adaptive_rag_mean_cost_usd: number;
+  agentic_multi_hop_mean_latency_ms: number;
+  adaptive_rag_mean_latency_ms: number;
   cost_reduction_pct: number;
   latency_reduction_pct: number;
 }
@@ -43,8 +46,8 @@ export interface CostLatency {
 export interface BreakdownRow {
   n: number;
   hybrid_reranker_mean_quality?: number;
-  always_agentic_mean_quality: number;
-  adaptive_mean_quality: number;
+  agentic_multi_hop_mean_quality: number;
+  adaptive_rag_mean_quality: number;
 }
 
 export interface UnderRoutedFailure {
@@ -52,10 +55,10 @@ export interface UnderRoutedFailure {
   question_type: string;
   hop_count: number;
   route: string;
-  adaptive_judge_score: number;
-  always_agentic_judge_score: number;
-  adaptive_evidence_coverage: number | null;
-  always_agentic_evidence_coverage: number | null;
+  adaptive_rag_judge_score: number;
+  agentic_multi_hop_judge_score: number;
+  adaptive_rag_evidence_coverage: number | null;
+  agentic_multi_hop_evidence_coverage: number | null;
 }
 
 export interface SampleReport {
@@ -67,7 +70,7 @@ export interface SampleReport {
   deterministic_metrics: Partial<Record<PipelineKey, DeterministicMetrics>>;
   judge_scores: Partial<Record<PipelineKey, SampleJudgeScore>>;
   combined_quality_mean: Partial<Record<PipelineKey, number>>;
-  adaptive_quality_retention_pct_vs_always_agentic: number;
+  adaptive_quality_retention_pct_vs_agentic_multi_hop: number;
   evidence_coverage_mean: Partial<Record<PipelineKey, number>>;
   cost_latency: CostLatency;
   breakdown_by_question_type: Record<string, BreakdownRow>;
@@ -94,7 +97,7 @@ export interface HoldoutReport {
   deterministic_metrics: Partial<Record<PipelineKey, DeterministicMetrics>>;
   judge_scores: Partial<Record<PipelineKey, HoldoutJudgeScore>>;
   combined_quality_mean: Partial<Record<PipelineKey, number>>;
-  adaptive_quality_retention_pct_vs_always_agentic: number;
+  adaptive_quality_retention_pct_vs_agentic_multi_hop: number;
   evidence_coverage_mean: Partial<Record<PipelineKey, number>>;
   cost_latency: CostLatency;
   breakdown_by_question_type: Record<string, BreakdownRow>;

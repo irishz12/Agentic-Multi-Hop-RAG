@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-"""Phase 7.1: LIVE token-budget calibration sweep for the Always-Agentic
-loop. Makes REAL API calls (GLM 4.7 Flash controller + Qwen final answer)
+"""Phase 7.1: LIVE token-budget calibration sweep for the Agentic
+Multi-Hop RAG loop. Makes REAL API calls (GLM 4.7 Flash controller + Qwen final answer)
 to Amazon Bedrock Mantle and incurs REAL (small) cost. Run explicitly, once
 per candidate budget (kept separate, not looped in-process, so each run
 fits comfortably under this environment's foreground execution window):

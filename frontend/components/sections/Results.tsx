@@ -43,16 +43,16 @@ function breakdownGroups(
         label: `${labelFn(key)} (n=${row.n})`,
         bars: [
           {
-            key: "always_agentic",
-            value: row.always_agentic_mean_quality,
-            color: PIPELINE_COLOR.always_agentic,
-            label: PIPELINE_LABEL.always_agentic,
+            key: "agentic_multi_hop",
+            value: row.agentic_multi_hop_mean_quality,
+            color: PIPELINE_COLOR.agentic_multi_hop,
+            label: PIPELINE_LABEL.agentic_multi_hop,
           },
           {
-            key: "adaptive",
-            value: row.adaptive_mean_quality,
-            color: PIPELINE_COLOR.adaptive,
-            label: PIPELINE_LABEL.adaptive,
+            key: "adaptive_rag",
+            value: row.adaptive_rag_mean_quality,
+            color: PIPELINE_COLOR.adaptive_rag,
+            label: PIPELINE_LABEL.adaptive_rag,
           },
         ],
       };
@@ -60,31 +60,31 @@ function breakdownGroups(
 }
 
 const AGENTIC_ADAPTIVE_LEGEND = [
-  { key: "always_agentic", label: PIPELINE_LABEL.always_agentic, color: PIPELINE_COLOR.always_agentic },
-  { key: "adaptive", label: PIPELINE_LABEL.adaptive, color: PIPELINE_COLOR.adaptive },
+  { key: "agentic_multi_hop", label: PIPELINE_LABEL.agentic_multi_hop, color: PIPELINE_COLOR.agentic_multi_hop },
+  { key: "adaptive_rag", label: PIPELINE_LABEL.adaptive_rag, color: PIPELINE_COLOR.adaptive_rag },
 ];
 
 export function Results({ sample, holdout, devBaselineCostLatency }: ResultsProps) {
   // --- answer quality -----------------------------------------------------------------
   const devQualityGroups = singleSeriesGroups([
     ["hybrid_reranker", sample.combined_quality_mean.hybrid_reranker ?? 0],
-    ["always_agentic", sample.combined_quality_mean.always_agentic ?? 0],
-    ["adaptive", sample.combined_quality_mean.adaptive ?? 0],
+    ["agentic_multi_hop", sample.combined_quality_mean.agentic_multi_hop ?? 0],
+    ["adaptive_rag", sample.combined_quality_mean.adaptive_rag ?? 0],
   ]);
   const holdoutQualityGroups = singleSeriesGroups([
-    ["always_agentic", holdout.combined_quality_mean.always_agentic ?? 0],
-    ["adaptive", holdout.combined_quality_mean.adaptive ?? 0],
+    ["agentic_multi_hop", holdout.combined_quality_mean.agentic_multi_hop ?? 0],
+    ["adaptive_rag", holdout.combined_quality_mean.adaptive_rag ?? 0],
   ]);
 
   // --- evidence coverage ---------------------------------------------------------------
   const devCoverageGroups = singleSeriesGroups(
-    (["dense", "hybrid", "hybrid_reranker", "always_agentic", "adaptive"] as PipelineKey[]).map(
+    (["dense", "hybrid", "hybrid_reranker", "agentic_multi_hop", "adaptive_rag"] as PipelineKey[]).map(
       (key) => [key, sample.evidence_coverage_mean[key] ?? 0] as [PipelineKey, number],
     ),
   );
   const holdoutCoverageGroups = singleSeriesGroups([
-    ["always_agentic", holdout.evidence_coverage_mean.always_agentic ?? 0],
-    ["adaptive", holdout.evidence_coverage_mean.adaptive ?? 0],
+    ["agentic_multi_hop", holdout.evidence_coverage_mean.agentic_multi_hop ?? 0],
+    ["adaptive_rag", holdout.evidence_coverage_mean.adaptive_rag ?? 0],
   ]);
 
   // --- cost / latency per query ----------------------------------------------------------
@@ -92,23 +92,23 @@ export function Results({ sample, holdout, devBaselineCostLatency }: ResultsProp
     ["dense", devBaselineCostLatency.dense.cost],
     ["hybrid", devBaselineCostLatency.hybrid.cost],
     ["hybrid_reranker", devBaselineCostLatency.hybrid_reranker.cost],
-    ["always_agentic", sample.cost_latency.always_agentic_mean_cost_usd],
-    ["adaptive", sample.cost_latency.adaptive_mean_cost_usd],
+    ["agentic_multi_hop", sample.cost_latency.agentic_multi_hop_mean_cost_usd],
+    ["adaptive_rag", sample.cost_latency.adaptive_rag_mean_cost_usd],
   ]);
   const holdoutCostGroups = singleSeriesGroups([
-    ["always_agentic", holdout.cost_latency.always_agentic_mean_cost_usd],
-    ["adaptive", holdout.cost_latency.adaptive_mean_cost_usd],
+    ["agentic_multi_hop", holdout.cost_latency.agentic_multi_hop_mean_cost_usd],
+    ["adaptive_rag", holdout.cost_latency.adaptive_rag_mean_cost_usd],
   ]);
   const devLatencyGroups = singleSeriesGroups([
     ["dense", devBaselineCostLatency.dense.latency],
     ["hybrid", devBaselineCostLatency.hybrid.latency],
     ["hybrid_reranker", devBaselineCostLatency.hybrid_reranker.latency],
-    ["always_agentic", sample.cost_latency.always_agentic_mean_latency_ms],
-    ["adaptive", sample.cost_latency.adaptive_mean_latency_ms],
+    ["agentic_multi_hop", sample.cost_latency.agentic_multi_hop_mean_latency_ms],
+    ["adaptive_rag", sample.cost_latency.adaptive_rag_mean_latency_ms],
   ]);
   const holdoutLatencyGroups = singleSeriesGroups([
-    ["always_agentic", holdout.cost_latency.always_agentic_mean_latency_ms],
-    ["adaptive", holdout.cost_latency.adaptive_mean_latency_ms],
+    ["agentic_multi_hop", holdout.cost_latency.agentic_multi_hop_mean_latency_ms],
+    ["adaptive_rag", holdout.cost_latency.adaptive_rag_mean_latency_ms],
   ]);
 
   // --- breakdowns --------------------------------------------------------------------------
@@ -149,9 +149,9 @@ export function Results({ sample, holdout, devBaselineCostLatency }: ResultsProp
   ];
 
   const devCostTicks = niceTicks(Math.max(...devCostGroups.map((g) => g.bars[0].value)));
-  const holdoutCostTicks = niceTicks(holdout.cost_latency.always_agentic_mean_cost_usd);
+  const holdoutCostTicks = niceTicks(holdout.cost_latency.agentic_multi_hop_mean_cost_usd);
   const devLatencyTicks = niceTicks(Math.max(...devLatencyGroups.map((g) => g.bars[0].value)));
-  const holdoutLatencyTicks = niceTicks(holdout.cost_latency.always_agentic_mean_latency_ms);
+  const holdoutLatencyTicks = niceTicks(holdout.cost_latency.agentic_multi_hop_mean_latency_ms);
 
   return (
     <Section id="results" number="06" title="Results" width="wide">

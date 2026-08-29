@@ -67,7 +67,7 @@ export function BaselineComparison({
       <DataTable
         columns={coverageColumns}
         rows={coverageRows}
-        emphasize={(r) => r.key === "always_agentic" || r.key === "adaptive"}
+        emphasize={(r) => r.key === "agentic_multi_hop" || r.key === "adaptive_rag"}
         caption="Evidence coverage across all five pipelines on the development sample"
       />
       <p className="mt-4 text-sm text-ink-muted">

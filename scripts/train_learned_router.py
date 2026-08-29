@@ -47,7 +47,7 @@ from datetime import datetime, timezone
 import numpy as np
 
 from mhrag.config import PROJECT_ROOT
-from mhrag.routing.cost_projection import UnitCost, always_agentic_projection, project_workload
+from mhrag.routing.cost_projection import UnitCost, agentic_multi_hop_projection, project_workload
 from mhrag.routing.features import QueryFeatures, RetrievalSignals, RouterFeatures
 from mhrag.routing.learned_features import STAGE1_FEATURE_NAMES, STAGE2_FEATURE_NAMES, stage1_feature_vector, stage2_feature_vector
 from mhrag.routing.learned_router_training import (
@@ -157,12 +157,12 @@ def main() -> None:
 
     predicted_route_counts = {r: predicted_routes.count(r) for r in ("SIMPLE", "MEDIUM", "COMPLEX")}
     routed_projection = project_workload(predicted_route_counts, unit_costs)
-    always_agentic = always_agentic_projection(len(records), unit_costs["agentic"])
+    agentic_multi_hop = agentic_multi_hop_projection(len(records), unit_costs["agentic"])
 
     print(f"\nLearned router (OOF): accuracy={learned_router_metrics['accuracy']:.1%} "
           f"macro_f1={learned_router_metrics['macro_f1']:.3f}")
     print(f"Predicted distribution: {predicted_route_counts}")
-    print(f"Routed cost=${routed_projection.total_cost_usd:.4f} vs Always-Agentic=${always_agentic.total_cost_usd:.4f}")
+    print(f"Routed cost=${routed_projection.total_cost_usd:.4f} vs Agentic Multi-Hop RAG=${agentic_multi_hop.total_cost_usd:.4f}")
 
     # --- fit the FINAL deployable models on the full dataset ----------------------------------
     stage1_model = fit_final_model(X1, y1, STAGE1_FEATURE_NAMES, threshold=selection.stage1_threshold)
@@ -244,11 +244,11 @@ def main() -> None:
                 "total_latency_ms": routed_projection.total_latency_ms,
                 "mean_latency_ms": routed_projection.mean_latency_ms,
             },
-            "always_agentic": {
-                "total_cost_usd": always_agentic.total_cost_usd,
-                "mean_cost_usd": always_agentic.mean_cost_usd,
-                "total_latency_ms": always_agentic.total_latency_ms,
-                "mean_latency_ms": always_agentic.mean_latency_ms,
+            "agentic_multi_hop": {
+                "total_cost_usd": agentic_multi_hop.total_cost_usd,
+                "mean_cost_usd": agentic_multi_hop.mean_cost_usd,
+                "total_latency_ms": agentic_multi_hop.total_latency_ms,
+                "mean_latency_ms": agentic_multi_hop.mean_latency_ms,
             },
         },
         "router_runtime_cost_and_latency": {
