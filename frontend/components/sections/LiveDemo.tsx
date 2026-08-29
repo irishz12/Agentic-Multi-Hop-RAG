@@ -27,6 +27,15 @@ const API_URL = process.env.NEXT_PUBLIC_DEMO_API_URL ?? "http://localhost:8000";
 const MAX_QUESTION_LENGTH = 500;
 const CLIENT_TIMEOUT_MS = 95_000;
 
+// `next dev` sets NODE_ENV to "development"; `next build` (this static site's
+// only deployment path) always sets it to "production" — Next.js inlines
+// this at build time, so the branch below is resolved once, at build time,
+// with no runtime env lookup and no extra configuration for whoever deploys
+// this. The interactive demo needs a live FastAPI backend on localhost, which
+// only exists when this repository is cloned and run locally; the deployed
+// static site has no backend to call, so it shows a note instead.
+const IS_STATIC_DEPLOYMENT = process.env.NODE_ENV === "production";
+
 interface LiveDemoProps {
   exampleQuestions: string[];
 }
@@ -107,139 +116,152 @@ export function LiveDemo({ exampleQuestions }: LiveDemoProps) {
         exact code behind every number above it.
       </p>
 
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          void submit(question);
-        }}
-        className="max-w-[42rem]"
-      >
-        <label htmlFor="live-demo-question" className="mb-2 block text-sm font-medium text-ink">
-          Your question
-        </label>
-        <textarea
-          id="live-demo-question"
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          maxLength={MAX_QUESTION_LENGTH}
-          rows={3}
-          placeholder="Ask something a single source might not fully answer…"
-          className="w-full resize-none border border-rule bg-transparent p-3 text-[1.0625rem] text-ink placeholder:text-ink-faint focus-visible:outline-2 focus-visible:outline-accent"
-        />
-        <div className="mt-3 flex items-center justify-between">
-          <button
-            type="submit"
-            disabled={status === "loading"}
-            className="border border-ink px-5 py-2 text-sm font-medium text-ink transition-colors hover:bg-ink hover:text-bg disabled:cursor-not-allowed disabled:opacity-40"
+      {IS_STATIC_DEPLOYMENT ? (
+        <p className="max-w-[42rem] border-t border-rule pt-8 text-[1.0625rem] leading-relaxed text-ink-muted">
+          Live demo available locally from the repository. This section calls
+          a separate FastAPI backend (<span className="font-data text-ink">backend/</span>) that
+          only runs alongside a local clone — it isn&rsquo;t part of this
+          static deployment. Clone the repository and follow{" "}
+          <span className="font-data text-ink">backend/README.md</span> to ask
+          a real question against the live pipeline.
+        </p>
+      ) : (
+        <>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void submit(question);
+            }}
+            className="max-w-[42rem]"
           >
-            {status === "loading" ? "Asking…" : "Ask"}
-          </button>
-          <span className="tnum font-data text-xs text-ink-faint">
-            {question.length}/{MAX_QUESTION_LENGTH}
-          </span>
-        </div>
-      </form>
+            <label htmlFor="live-demo-question" className="mb-2 block text-sm font-medium text-ink">
+              Your question
+            </label>
+            <textarea
+              id="live-demo-question"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              maxLength={MAX_QUESTION_LENGTH}
+              rows={3}
+              placeholder="Ask something a single source might not fully answer…"
+              className="w-full resize-none border border-rule bg-transparent p-3 text-[1.0625rem] text-ink placeholder:text-ink-faint focus-visible:outline-2 focus-visible:outline-accent"
+            />
+            <div className="mt-3 flex items-center justify-between">
+              <button
+                type="submit"
+                disabled={status === "loading"}
+                className="border border-ink px-5 py-2 text-sm font-medium text-ink transition-colors hover:bg-ink hover:text-bg disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {status === "loading" ? "Asking…" : "Ask"}
+              </button>
+              <span className="tnum font-data text-xs text-ink-faint">
+                {question.length}/{MAX_QUESTION_LENGTH}
+              </span>
+            </div>
+          </form>
 
-      {exampleQuestions.length > 0 ? (
-        <div className="mt-6 max-w-[42rem]">
-          <p className="mb-2 text-xs font-medium tracking-wide text-ink-faint uppercase">
-            Or try a real development-split question
-          </p>
-          <ul className="space-y-1.5">
-            {exampleQuestions.map((exampleQuestion) => (
-              <li key={exampleQuestion}>
-                <button
-                  type="button"
-                  onClick={() => handleExampleClick(exampleQuestion)}
-                  disabled={status === "loading"}
-                  className="text-left text-sm text-ink-muted underline decoration-rule underline-offset-4 hover:text-ink hover:decoration-ink disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  {exampleQuestion}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
+          {exampleQuestions.length > 0 ? (
+            <div className="mt-6 max-w-[42rem]">
+              <p className="mb-2 text-xs font-medium tracking-wide text-ink-faint uppercase">
+                Or try a real development-split question
+              </p>
+              <ul className="space-y-1.5">
+                {exampleQuestions.map((exampleQuestion) => (
+                  <li key={exampleQuestion}>
+                    <button
+                      type="button"
+                      onClick={() => handleExampleClick(exampleQuestion)}
+                      disabled={status === "loading"}
+                      className="text-left text-sm text-ink-muted underline decoration-rule underline-offset-4 hover:text-ink hover:decoration-ink disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      {exampleQuestion}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
 
-      <div className="mt-10 max-w-[42rem] border-t border-rule pt-8" aria-live="polite">
-        {status === "loading" ? (
-          <p className="text-sm text-ink-muted">
-            Retrieving, reranking, and checking evidence sufficiency — this can take up to
-            half a minute if the pipeline needs a follow-up hop.
-          </p>
-        ) : null}
-
-        {status === "error" ? (
-          <p className="text-sm text-ink-muted">
-            <span className="font-medium text-accent-2">Couldn&rsquo;t complete that request.</span>{" "}
-            {errorMessage}
-          </p>
-        ) : null}
-
-        {status === "success" && response ? (
-          <div>
-            <p className="text-[1.0625rem] leading-relaxed text-ink">{response.answer}</p>
-
-            <dl className="mt-8 grid grid-cols-2 gap-x-8 gap-y-4 text-xs text-ink-muted sm:grid-cols-4">
-              <div>
-                <dt className="tracking-wide text-ink-faint uppercase">Retrieval hops</dt>
-                <dd className="tnum font-data mt-1 text-sm text-ink">{response.retrieval_calls}</dd>
-              </div>
-              <div>
-                <dt className="tracking-wide text-ink-faint uppercase">Controller calls</dt>
-                <dd className="tnum font-data mt-1 text-sm text-ink">{response.controller_calls}</dd>
-              </div>
-              <div>
-                <dt className="tracking-wide text-ink-faint uppercase">Latency</dt>
-                <dd className="tnum font-data mt-1 text-sm text-ink">
-                  {(response.latency_ms / 1000).toFixed(1)}s
-                </dd>
-              </div>
-              <div>
-                <dt className="tracking-wide text-ink-faint uppercase">Estimated cost</dt>
-                <dd className="tnum font-data mt-1 text-sm text-ink">
-                  {response.estimated_cost_usd != null ? `$${response.estimated_cost_usd.toFixed(5)}` : "—"}
-                </dd>
-              </div>
-            </dl>
-
-            {response.documents_used.length > 0 ? (
-              <div className="mt-6">
-                <p className="text-xs font-medium tracking-wide text-ink-faint uppercase">
-                  Source documents used
-                </p>
-                <ul className="mt-2 space-y-1">
-                  {response.documents_used.map((title) => (
-                    <li key={title} className="text-sm text-ink-muted">
-                      {title}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+          <div className="mt-10 max-w-[42rem] border-t border-rule pt-8" aria-live="polite">
+            {status === "loading" ? (
+              <p className="text-sm text-ink-muted">
+                Retrieving, reranking, and checking evidence sufficiency — this can take up to
+                half a minute if the pipeline needs a follow-up hop.
+              </p>
             ) : null}
 
-            {response.hops.length > 1 ? (
-              <div className="mt-6">
-                <p className="text-xs font-medium tracking-wide text-ink-faint uppercase">
-                  Follow-up queries
-                </p>
-                <ol className="mt-2 space-y-1">
-                  {response.hops.slice(1).map((hop) => (
-                    <li key={hop.hop_number} className="text-sm text-ink-muted">
-                      Hop {hop.hop_number}: {hop.query}
-                    </li>
-                  ))}
-                </ol>
-              </div>
+            {status === "error" ? (
+              <p className="text-sm text-ink-muted">
+                <span className="font-medium text-accent-2">Couldn&rsquo;t complete that request.</span>{" "}
+                {errorMessage}
+              </p>
             ) : null}
 
-            <p className="mt-6 text-xs text-ink-faint">
-              Stop reason: <span className="font-data">{response.stop_reason}</span>
-            </p>
+            {status === "success" && response ? (
+              <div>
+                <p className="text-[1.0625rem] leading-relaxed text-ink">{response.answer}</p>
+
+                <dl className="mt-8 grid grid-cols-2 gap-x-8 gap-y-4 text-xs text-ink-muted sm:grid-cols-4">
+                  <div>
+                    <dt className="tracking-wide text-ink-faint uppercase">Retrieval hops</dt>
+                    <dd className="tnum font-data mt-1 text-sm text-ink">{response.retrieval_calls}</dd>
+                  </div>
+                  <div>
+                    <dt className="tracking-wide text-ink-faint uppercase">Controller calls</dt>
+                    <dd className="tnum font-data mt-1 text-sm text-ink">{response.controller_calls}</dd>
+                  </div>
+                  <div>
+                    <dt className="tracking-wide text-ink-faint uppercase">Latency</dt>
+                    <dd className="tnum font-data mt-1 text-sm text-ink">
+                      {(response.latency_ms / 1000).toFixed(1)}s
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="tracking-wide text-ink-faint uppercase">Estimated cost</dt>
+                    <dd className="tnum font-data mt-1 text-sm text-ink">
+                      {response.estimated_cost_usd != null ? `$${response.estimated_cost_usd.toFixed(5)}` : "—"}
+                    </dd>
+                  </div>
+                </dl>
+
+                {response.documents_used.length > 0 ? (
+                  <div className="mt-6">
+                    <p className="text-xs font-medium tracking-wide text-ink-faint uppercase">
+                      Source documents used
+                    </p>
+                    <ul className="mt-2 space-y-1">
+                      {response.documents_used.map((title) => (
+                        <li key={title} className="text-sm text-ink-muted">
+                          {title}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+
+                {response.hops.length > 1 ? (
+                  <div className="mt-6">
+                    <p className="text-xs font-medium tracking-wide text-ink-faint uppercase">
+                      Follow-up queries
+                    </p>
+                    <ol className="mt-2 space-y-1">
+                      {response.hops.slice(1).map((hop) => (
+                        <li key={hop.hop_number} className="text-sm text-ink-muted">
+                          Hop {hop.hop_number}: {hop.query}
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                ) : null}
+
+                <p className="mt-6 text-xs text-ink-faint">
+                  Stop reason: <span className="font-data">{response.stop_reason}</span>
+                </p>
+              </div>
+            ) : null}
           </div>
-        ) : null}
-      </div>
+        </>
+      )}
     </Section>
   );
 }
