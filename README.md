@@ -15,6 +15,18 @@ Hybrid RAG, Hybrid + Reranker, and Adaptive RAG — on answer quality,
 evidence coverage, cost, and latency, measured on a development sample and,
 once, on a one-time final holdout evaluation.
 
+**In short:** on development questions genuinely resolved through
+iteration, mean evidence coverage rose **63.2% → 75.7% → 81.5%** across
+Baseline → Context-Matched (a controlled, same-evidence-volume baseline) →
+Agentic — see the case study in §15 for the controlled comparison, the
+mechanism evidence, and worked examples with real recovered queries.
+
+**Stack:** Python · Qdrant (hybrid dense + BM25 retrieval) ·
+`BAAI/bge-base-en-v1.5` (dense embeddings) · `BAAI/bge-reranker-base`
+(cross-encoder reranking) · `zai.glm-4.7-flash` (agent controller) ·
+`qwen.qwen3-next-80b-a3b-instruct` (generation) · scikit-learn (learned
+Adaptive router) · FastAPI + Next.js (live demo).
+
 ## 1. Problem
 
 Single-pass RAG retrieves once and generates once. That works when one
@@ -435,6 +447,199 @@ Config is split across `configs/dataset.yaml` (splits/seeds),
 `configs/mantle.yaml` (final-answer model/pricing), `configs/agent.yaml`
 (controller/loop/pricing), `configs/judge.yaml` (frozen judge model/rubric
 version), and `configs/models.yaml` (fixed model-id decisions).
+
+## 15. Case study — why iterative retrieval earns its cost
+
+A single retrieval pass either finds everything a question needs or it
+doesn't — and has no way to notice which. The agentic controller's job is
+exactly that noticing: after every hop it judges whether the evidence
+gathered so far is sufficient, and if not, issues one focused follow-up
+query aimed at what's missing. On the subset of development questions this
+project can trace end to end — where hop 1 alone genuinely wasn't enough —
+that mechanism visibly earns its keep.
+
+The general mechanism, independent of any one question:
+
+```mermaid
+flowchart TD
+    Q["Question"] --> H1["Hop 1 retrieval\n(Hybrid Dense + BM25 -> RRF -> Reranker)"]
+    H1 --> EA{"Evidence assessment\n(GLM controller)"}
+    EA -->|"Sufficient"| FA["Final answer"]
+    EA -->|"Not sufficient, hops remain"| QR["Query reformulation\n(controller writes a focused follow-up)"]
+    QR --> H2["Hop 2 / Hop 3 retrieval"]
+    H2 --> MERGE["Merge new evidence\n(dedup by chunk id)"]
+    MERGE --> EA
+    EA -->|"Hop/budget/timeout limit reached"| FA
+```
+
+One concrete instance of that flow, from the evaluated development set:
+
+```mermaid
+flowchart LR
+    Q["Question: did the Nike Latin America/Asia Pacific\nreport and the Fortune U.S. home-sales report\nboth show an increase?"] --> H1["Hop 1 query = the question itself\n-> retrieves 1 doc: the Nike/CNBC report"]
+    H1 --> GAP{"Controller: evidence sufficient?"}
+    GAP -->|"No - Fortune source still missing"| H2["Hop 2, controller-written follow-up:\n'Fortune article U.S. home sales price increase'"]
+    H2 --> NEW["2 new chunks retrieved -> the Fortune report"]
+    NEW --> GAP2{"Controller: evidence sufficient?"}
+    GAP2 -->|"Yes"| ANS["Final answer, Qwen, both sources in context:\ncorrect - 'Yes, both reported an increase...'"]
+```
+
+*(qa_id `23e249aa926b8fda` — the actual recovered hop-2 query and evidence
+for this question; full trace in Example 1 below.)*
+
+### Baseline vs. Context-Matched vs. Agentic
+
+Three pipelines are compared, deliberately isolating *how much evidence*
+from *how it was found*:
+
+| Pipeline | What it does |
+|---|---|
+| **Baseline (Hybrid + Reranker)** | One retrieval pass, top-5 chunks, no iteration — §5/§6. |
+| **Context-Matched (control)** | The *same* single-pass retrieval, but given as many chunks as Agentic actually ended up using for that specific question — isolates whether an advantage is just "more context" rather than the iteration itself. |
+| **Agentic Multi-Hop (all hops)** | Up to 3 retrieval hops; the controller decides after each one whether to stop or issue a new, targeted query; evidence is deduplicated and merged across hops before generation. |
+
+Because Context-Matched already controls for evidence *volume*, any
+remaining Agentic advantage over it is attributable to *which* evidence
+iteration found — not simply how much of it there was.
+
+### Results: evidence coverage on genuinely multi-hop-resolved questions
+
+![Evidence coverage, multi-hop-resolved subset](results/charts/multihop_evidence_coverage.png)
+
+Measured on the 86 development questions where Agentic actually took more
+than one hop and all three pipelines have a result to compare
+(`results/multihop_success_analysis.json`):
+
+> **63.2% → 75.7% → 81.5%**
+> Baseline → Context-Matched (same evidence volume, no iteration) → Agentic Multi-Hop (iterative retrieval)
+
+| Pipeline | Mean evidence coverage | vs. Baseline | vs. Context-Matched |
+|---|---|---|---|
+| Baseline (Hybrid + Reranker) | 63.2% | — | — |
+| Context-Matched (control) | 75.7% | +12.5 pp | — |
+| **Agentic Multi-Hop (all hops)** | **81.5%** | **+18.3 pp** | **+5.8 pp** |
+
+**Mechanism evidence:** of the 92 questions Agentic resolved in 2+ hops, a
+later hop retrieved a required (gold) document that hop 1 had missed in
+**33 cases (35.9%)** — later hops recovered previously missing required
+evidence in roughly a third of genuinely multi-hop questions.
+
+**Strongest outcome:** of those 33, Agentic went on to produce a
+correctly-graded answer where *both* Baseline and Context-Matched were
+graded incorrect in **7 cases** total
+(`results/multihop_success_analysis.json`'s
+`final_judge_outcome_breakdown.beats_both_baselines`). One of those 7
+(`qa_id 03ea05f6e99ffb38`) is excluded from the worked-examples selection
+below only — a known Task Success evaluator-grade quirk, documented in the
+same artifact's `excluded_qa_ids` field — leaving **6 (18.2% of 33)** used
+for examples. Both numbers are reported so the 7→6 reduction is explicit
+and reproducible, not a silent discrepancy: a real, traceable, but partial
+conversion rate either way — finding the missing evidence is necessary but
+not sufficient for a better final answer, and that gap is reported here
+rather than smoothed over (see Limitations below).
+
+![Question-type breakdown](results/charts/multihop_question_type_breakdown.png)
+
+### Three worked examples
+
+Each trace below combines the original benchmark run with a **live,
+independent replay** of that exact question (`scripts/replay_multihop_examples.py`,
+development split only), which recovered the actual verbatim hop-2/hop-3
+queries — the original benchmark script never persisted them, only the
+final aggregate result.
+
+**1. `23e249aa926b8fda` — comparison, stopped `evidence_sufficient`**
+- **Question**: *"Did the report from CNBC on Nike's Latin America and
+  Asia Pacific unit and the article from Fortune on the U.S. home sales
+  price both report an increase in their respective financial figures?"*
+- **Hop 1** (= the question itself) → 1 document (the Nike/CNBC report).
+  Missing: the Fortune source entirely.
+- **Hop 2** (controller's own follow-up query): *"Fortune article U.S. home
+  sales price increase"* → 2 new chunks, the Fortune report.
+- **Agentic answer** (correct): *"Yes, the report from CNBC ... sales up 2%
+  to $1.57 billion ... The article from Fortune ... existing-home sales
+  prices topped $306,000, a 5% increase..."*
+- **Baseline (5-chunk) answer** (incorrect): *"...does not include any
+  report from CNBC ... nor Fortune..."* — Fortune's document simply never
+  made it into a single top-5 pass.
+
+**2. `d04368e192f8096f` — inference, stopped `max_hops`**
+- **Question**: *"Which individual, covered by both 'The Verge' and
+  'TechCrunch', is implicated in using customer funds for a buyout, faced
+  challenges managing two companies due to rapid growth, and is accused of
+  committing fraud for personal gain?"*
+- **Hop 1** (= the question itself) → 4 documents, none naming the
+  individual directly.
+- **Hop 2** (controller's follow-up — a plausible but off-target guess):
+  *"Monzo CEO Conor Walsh customer funds buyout fraud"* → 3 new chunks,
+  which (despite the wrong name) surfaced more of the real FTX material.
+- **Hop 3**: *"Conor Walsh Monzo fraud customer funds buyout"* → 1 further
+  new chunk before the loop hit its 3-hop limit.
+- **Agentic answer** (correct): *"...Sam Bankman-Fried. He directed the use
+  of $1 billion in FTX customer funds to buy back FTX shares from
+  Binance..."*
+- **Baseline (5-chunk) answer** (incorrect): *"...insufficient to
+  answer."*
+- Worth stating plainly: hop 2's own query named the wrong company — the
+  controller doesn't always reformulate accurately — yet the retrieval it
+  triggered still recovered the right evidence and the final answer was
+  correct. Iteration adding value here did not depend on every intermediate
+  step being well-aimed.
+
+**3. `da4c6b17d34d5bb3` — comparison, stopped `token_budget`**
+- **Question**: *"Does the TechCrunch article on Meta's advertising
+  practices involve the European Commission in a similar capacity to how
+  the European Commission is involved in Amazon's iRobot purchase and Elon
+  Musk's X company's DSA probe, as reported by TechCrunch in both cases?"*
+- **Hop 1** (= the question itself) → 4 documents, missing the
+  Amazon/iRobot source.
+- **Hop 2**: *"TechCrunch article Amazon iRobot European Commission
+  investigation"* → 1 new document, the missing Amazon/iRobot piece.
+- **Hop 3**: *"TechCrunch article Meta advertising practices European
+  Commission"* → 4 more chunks (mostly reinforcing hop 1's material) before
+  the loop's context-token budget was reached.
+- **Agentic answer** (correct): identifies the Commission's role as
+  structurally comparable across all three cases — Meta (DSA/DMA), X (DSA
+  investigation), and Amazon/iRobot (antitrust) — citing specifics for
+  each.
+- **Baseline (5-chunk) answer** (incorrect): *"...does not mention Amazon's
+  acquisition of iRobot."*
+
+All three questions' stop reason, hop count, and final evidence-document
+set reproduced exactly in the live replay.
+
+### Limitations of this analysis
+
+- **Iteration finding evidence is not the same as iteration fixing the
+  answer.** Only 6 of the 33 questions where a later hop added required
+  evidence flipped from "both baselines wrong" to "Agentic correct" — the
+  other 27 saw no such clean win. This section deliberately reports both
+  numbers, not just the flattering one.
+- **Generation is not byte-deterministic.** All 5 replayed questions used
+  `temperature=0.0` end to end, and hop count / stop reason / (in 3 of 5
+  cases) the final evidence-document set reproduced exactly — but the
+  exact wording of every answer differed slightly between the original run
+  and the replay, even when the underlying evidence was identical. Hosted
+  LLM inference at temperature 0 is not guaranteed to be token-identical
+  across separate API calls.
+- **Retrieval itself showed minor variation on 2 of the 5 replayed
+  questions** — a different chunk was selected at the retrieval boundary,
+  most likely because the vector index's approximate nearest-neighbor
+  search isn't guaranteed bit-identical across separate live queries. The
+  three examples shown above were chosen from the three that reproduced
+  exactly; this is disclosed, not hidden.
+- **This is a targeted, traceable subset, not the whole system.** The
+  86–92 question population above is genuinely multi-hop-resolved
+  development questions specifically — it is not the §8/§9 headline
+  sample, and these findings should not be read as "Agentic always
+  improves the answer" (see the 6/33 conversion rate above).
+- **Fact-grounding, where measured elsewhere in this project, is
+  retrieval-side only** — whether a required fact reached the generation
+  context, not whether the generated answer correctly used it — and is
+  intentionally not used as evidence for this section's claims.
+- **Development-stage analysis only.** Every number in this section comes
+  from the development split; the one-time final holdout evaluation (§9)
+  is reported separately and is not part of this case study.
 
 ## Project layout
 

@@ -1,0 +1,149 @@
+{
+  "purpose": "AUDIT ABLATION, FULL-POPULATION SCALE-UP (dev-only, offline)",
+  "n_full_eligible": 117,
+  "n_quality_eligible": 117,
+  "extension_judge_files_present": true,
+  "context_matching_quality": {
+    "n_eligible": 117,
+    "target_n_distribution": {
+      "5": 31,
+      "6": 4,
+      "7": 5,
+      "8": 12,
+      "9": 15,
+      "10": 26,
+      "11": 16,
+      "12": 7,
+      "13": 1
+    },
+    "matched_actual_n_distribution": {
+      "5": 31,
+      "6": 4,
+      "7": 5,
+      "8": 12,
+      "9": 15,
+      "10": 26,
+      "11": 18,
+      "12": 5,
+      "13": 1
+    },
+    "agentic_actual_n_distribution_same_qa_ids": {
+      "5": 31,
+      "6": 4,
+      "7": 5,
+      "8": 12,
+      "9": 15,
+      "10": 26,
+      "11": 16,
+      "12": 7,
+      "13": 1
+    },
+    "n_mismatched_vs_agentic_realized_count": 2,
+    "mismatch_rate": 0.017094017094017096,
+    "mean_target_n": 8.35897435897436,
+    "mean_matched_actual_n": 8.341880341880342,
+    "mean_agentic_actual_n": 8.35897435897436,
+    "mean_matched_total_tokens": 3106.811965811966
+  },
+  "pipeline_summary": {
+    "hybrid_reranker_5chunk": {
+      "n_full_eligible": 117,
+      "n_quality_eligible": 117,
+      "combined_quality_mean": 0.3547008547008547,
+      "combined_quality_median": 0.0,
+      "evidence_coverage_mean": 0.7058404558404558,
+      "mean_chunks_used": 5,
+      "median_chunks_used": 5,
+      "mean_cost_usd": 0.0004961374358974359,
+      "mean_latency_ms": 5103.3925301965055
+    },
+    "hybrid_reranker_context_matched": {
+      "n_full_eligible": 117,
+      "n_quality_eligible": 117,
+      "combined_quality_mean": 0.3888888888888889,
+      "combined_quality_median": 0.0,
+      "evidence_coverage_mean": 0.7977207977207977,
+      "mean_chunks_used": 8.341880341880342,
+      "median_chunks_used": 9,
+      "mean_cost_usd": 0.0007047653846153846,
+      "mean_latency_ms": 6840.7827044098885
+    },
+    "agentic_multi_hop": {
+      "n_full_eligible": 117,
+      "n_quality_eligible": 117,
+      "combined_quality_mean": 0.47863247863247865,
+      "combined_quality_median": 0.0,
+      "evidence_coverage_mean": 0.8404558404558404,
+      "mean_chunks_used": 8.35897435897436,
+      "median_chunks_used": 9,
+      "mean_cost_usd": 0.001208548888888889,
+      "mean_latency_ms": 10360.385757512755
+    }
+  },
+  "paired_comparisons": {
+    "agentic_vs_matched": {
+      "n": 117,
+      "mean_delta": 0.08974358974358974,
+      "median_delta": 0.0,
+      "stdev_delta": 0.4285872170894973,
+      "ci_95_nominal": [
+        0.01282051282051282,
+        0.16666666666666666
+      ],
+      "ci_bonferroni_corrected": [
+        0.0,
+        0.1794871794871795
+      ],
+      "bonferroni_alpha_used": 0.025,
+      "excludes_zero_nominal_95": true,
+      "excludes_zero_bonferroni": false,
+      "cohens_d_paired": 0.20939399535299147
+    },
+    "matched_vs_baseline5": {
+      "n": 117,
+      "mean_delta": 0.03418803418803419,
+      "median_delta": 0.0,
+      "stdev_delta": 0.39242007601864815,
+      "ci_95_nominal": [
+        -0.03418803418803419,
+        0.10256410256410256
+      ],
+      "ci_bonferroni_corrected": [
+        -0.042735042735042736,
+        0.11965811965811966
+      ],
+      "bonferroni_alpha_used": 0.025,
+      "excludes_zero_nominal_95": false,
+      "excludes_zero_bonferroni": false,
+      "cohens_d_paired": 0.08712101209217835
+    },
+    "agentic_vs_baseline5": {
+      "n": 117,
+      "mean_delta": 0.12393162393162394,
+      "median_delta": 0.0,
+      "stdev_delta": 0.3988452237720647,
+      "ci_95_nominal": [
+        0.05128205128205128,
+        0.19658119658119658
+      ],
+      "ci_bonferroni_corrected": [
+        0.05128205128205128,
+        0.19658119658119658
+      ],
+      "bonferroni_alpha_used": null,
+      "excludes_zero_nominal_95": true,
+      "excludes_zero_bonferroni": true,
+      "cohens_d_paired": 0.3107261076353001
+    }
+  },
+  "bootstrap_config": {
+    "resamples": 10000,
+    "seed": 2029
+  },
+  "multiple_comparison_correction": {
+    "method": "Bonferroni",
+    "n_comparisons": 2,
+    "corrected_alpha_per_comparison": 0.025
+  },
+  "note": "No causal conclusion is declared here."
+}

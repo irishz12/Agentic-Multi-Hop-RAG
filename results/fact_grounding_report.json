@@ -1,0 +1,226 @@
+{
+  "generated_at": "2026-08-31T11:18:19.235553+00:00",
+  "purpose": "Phase 5B \u2014 RETRIEVAL-SIDE fact-level grounding (did required gold facts reach the generation context; NOT whether the generated answer used them), dev-only, zero LLM/API calls",
+  "scope_label": "retrieval-side fact-level grounding",
+  "fact_matching_method": "exact/normalized substring, single-chunk only (see mhrag.eval.fact_grounding)",
+  "pipeline_summaries": {
+    "hybrid_reranker": {
+      "scope": "n=265, all non-null development questions",
+      "n_questions": 265,
+      "mean_per_question_fact_grounded_rate": 0.47861635220125787,
+      "n_pooled_facts": 722,
+      "pooled_fact_grounded_rate": 0.4404432132963989,
+      "pooled_fact_grounded_rate_ci_95": [
+        0.4046414860134942,
+        0.4768753397961973
+      ],
+      "by_question_type": {
+        "comparison_query": {
+          "n_questions": 101,
+          "mean_per_question_fact_grounded_rate": 0.5957095709570956,
+          "n_pooled_facts": 233,
+          "pooled_fact_grounded_rate": 0.5665236051502146,
+          "pooled_fact_grounded_rate_ci_95": [
+            0.5023235434567214,
+            0.6285657026843827
+          ]
+        },
+        "inference_query": {
+          "n_questions": 96,
+          "mean_per_question_fact_grounded_rate": 0.4114583333333333,
+          "n_pooled_facts": 317,
+          "pooled_fact_grounded_rate": 0.38801261829652994,
+          "pooled_fact_grounded_rate_ci_95": [
+            0.336015752464611,
+            0.4426911507486699
+          ]
+        },
+        "temporal_query": {
+          "n_questions": 68,
+          "mean_per_question_fact_grounded_rate": 0.39950980392156865,
+          "n_pooled_facts": 172,
+          "pooled_fact_grounded_rate": 0.36627906976744184,
+          "pooled_fact_grounded_rate_ci_95": [
+            0.29793020881993054,
+            0.4404705056162123
+          ]
+        }
+      }
+    },
+    "hybrid_reranker_matched": {
+      "scope": "n=117, subset with a known Agentic target-N",
+      "n_questions": 117,
+      "mean_per_question_fact_grounded_rate": 0.6830484330484331,
+      "n_pooled_facts": 288,
+      "pooled_fact_grounded_rate": 0.6458333333333334,
+      "pooled_fact_grounded_rate_ci_95": [
+        0.5890097190681146,
+        0.698817789536854
+      ],
+      "by_question_type": {
+        "comparison_query": {
+          "n_questions": 90,
+          "mean_per_question_fact_grounded_rate": 0.7444444444444445,
+          "n_pooled_facts": 206,
+          "pooled_fact_grounded_rate": 0.7233009708737864,
+          "pooled_fact_grounded_rate_ci_95": [
+            0.658545917365907,
+            0.7798803141187512
+          ]
+        },
+        "inference_query": {
+          "n_questions": 16,
+          "mean_per_question_fact_grounded_rate": 0.4427083333333333,
+          "n_pooled_facts": 55,
+          "pooled_fact_grounded_rate": 0.41818181818181815,
+          "pooled_fact_grounded_rate_ci_95": [
+            0.29737765753510353,
+            0.5496689626476924
+          ]
+        },
+        "temporal_query": {
+          "n_questions": 11,
+          "mean_per_question_fact_grounded_rate": 0.5303030303030303,
+          "n_pooled_facts": 27,
+          "pooled_fact_grounded_rate": 0.5185185185185185,
+          "pooled_fact_grounded_rate_ci_95": [
+            0.3398561575495229,
+            0.6925677302378153
+          ]
+        }
+      }
+    },
+    "agentic_tier_a_full_fidelity": {
+      "scope": "n=31, num_agent_hops<=1 \u2014 hop-1 replay EQUALS the original final evidence pool for these questions; headline-eligible WITHIN this tier only",
+      "n_questions": 31,
+      "mean_per_question_fact_grounded_rate": 0.782258064516129,
+      "n_pooled_facts": 72,
+      "pooled_fact_grounded_rate": 0.75,
+      "pooled_fact_grounded_rate_ci_95": [
+        0.6390649259565606,
+        0.8356094877452105
+      ],
+      "by_question_type": {
+        "comparison_query": {
+          "n_questions": 27,
+          "mean_per_question_fact_grounded_rate": 0.8086419753086419,
+          "n_pooled_facts": 61,
+          "pooled_fact_grounded_rate": 0.7868852459016393,
+          "pooled_fact_grounded_rate_ci_95": [
+            0.6687758459836244,
+            0.8710022625994256
+          ]
+        },
+        "inference_query": {
+          "n_questions": 4,
+          "mean_per_question_fact_grounded_rate": 0.6041666666666666,
+          "n_pooled_facts": 11,
+          "pooled_fact_grounded_rate": 0.5454545454545454,
+          "pooled_fact_grounded_rate_ci_95": [
+            0.28009153740932197,
+            0.7872872837754022
+          ]
+        }
+      }
+    },
+    "agentic_tier_b_hop1_lower_bound": {
+      "scope": "n=86, num_agent_hops>1 \u2014 HOP-1 ONLY, an INCOMPLETE LOWER BOUND on the true multi-hop Agentic fact-grounding rate \u2014 hops 2-3's queries cannot be reconstructed from persisted artifacts (see Phase 5 audit, Phase 5A). NEVER combine with Tier A.",
+      "n_questions": 86,
+      "mean_per_question_fact_grounded_rate": 0.4932170542635659,
+      "n_pooled_facts": 216,
+      "pooled_fact_grounded_rate": 0.4583333333333333,
+      "pooled_fact_grounded_rate_ci_95": [
+        0.3931930847274052,
+        0.5249297293379753
+      ],
+      "by_question_type": {
+        "comparison_query": {
+          "n_questions": 63,
+          "mean_per_question_fact_grounded_rate": 0.5370370370370371,
+          "n_pooled_facts": 145,
+          "pooled_fact_grounded_rate": 0.5103448275862069,
+          "pooled_fact_grounded_rate_ci_95": [
+            0.4297685883792333,
+            0.5903870861470023
+          ]
+        },
+        "inference_query": {
+          "n_questions": 12,
+          "mean_per_question_fact_grounded_rate": 0.3263888888888889,
+          "n_pooled_facts": 44,
+          "pooled_fact_grounded_rate": 0.3181818181818182,
+          "pooled_fact_grounded_rate_ci_95": [
+            0.19999307710853426,
+            0.46556896062182235
+          ]
+        },
+        "temporal_query": {
+          "n_questions": 11,
+          "mean_per_question_fact_grounded_rate": 0.42424242424242425,
+          "n_pooled_facts": 27,
+          "pooled_fact_grounded_rate": 0.4074074074074074,
+          "pooled_fact_grounded_rate_ci_95": [
+            0.24514757074395555,
+            0.592732990319353
+          ]
+        }
+      }
+    }
+  },
+  "paired_comparisons": {
+    "context_matched_vs_agentic_tier_a": {
+      "n": 31,
+      "mean_delta_agentic_minus_matched": 0.0,
+      "median_delta": 0.0,
+      "stdev_delta": 0.0,
+      "ci_95_nominal": [
+        0.0,
+        0.0
+      ],
+      "ci_bonferroni_corrected": null,
+      "cohens_d": null,
+      "note": "For Tier A (num_agent_hops<=1), Agentic hop-1's retrieval config and query are IDENTICAL to hybrid_reranker's, and Context-Matched's target-N for these single-hop originals is itself sourced from the Agentic run's own realized chunk count \u2014 so this comparison is a TAUTOLOGICAL check on this tier (both sides compute the same thing for single-hop questions by construction), not evidence that iteration adds value. See report."
+    },
+    "context_matched_vs_hybrid_reranker": {
+      "n": 117,
+      "mean_delta_matched_minus_baseline5": 0.11324786324786325,
+      "median_delta": 0.0,
+      "stdev_delta": 0.22006114682219904,
+      "ci_95_nominal": [
+        0.0762108262108262,
+        0.15455840455840456
+      ],
+      "ci_bonferroni_corrected": [
+        0.07051282051282051,
+        0.16096866096866097
+      ],
+      "cohens_d": 0.5146199812335032
+    }
+  },
+  "bonferroni_alpha_per_comparison": 0.025,
+  "primary_comparison_family": [
+    "context_matched_vs_agentic_tier_a",
+    "context_matched_vs_hybrid_reranker"
+  ],
+  "phase5a_fidelity_cross_check": {
+    "hybrid_reranker_vs_phase5a": {
+      "n": 265,
+      "exact": 265
+    },
+    "hybrid_reranker_matched_prebudget_vs_phase5a": {
+      "n": 117,
+      "exact": 117
+    },
+    "hybrid_reranker_matched_postbudget_vs_original_persisted": {
+      "n": 117,
+      "exact": 117,
+      "mismatches": []
+    }
+  },
+  "denominators": {
+    "hybrid_reranker_n": 265,
+    "hybrid_reranker_matched_n": 117,
+    "agentic_tier_a_n": 31,
+    "agentic_tier_b_n": 86
+  }
+}

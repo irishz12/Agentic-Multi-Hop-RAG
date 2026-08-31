@@ -1,0 +1,55 @@
+{
+  "generated_at": "2026-08-28T14:42:09.516511+00:00",
+  "purpose": "Phase 7.1 objective token-budget selection",
+  "selected_token_budget": 4500,
+  "baseline_token_budget": 3000,
+  "rationale": "4500 selected: reduced token_budget stop rate by 48.1% (>= 15% threshold), gained 1.78 new unique docs/query after hop 1 on average (>= 0.3 threshold), cost/latency within 1.5x baseline, and evidence quality (recall, complete-evidence rate) did not regress beyond 2%.",
+  "criteria_by_candidate": {
+    "4500": {
+      "reduces_budget_stops": true,
+      "meaningful_recovery": true,
+      "cost_ok": true,
+      "latency_ok": true,
+      "recall_ok": true,
+      "complete_evidence_ok": true
+    }
+  },
+  "metrics_by_budget": {
+    "3000": {
+      "token_budget_stop_rate": 0.5555555555555556,
+      "mean_new_unique_docs_after_hop1": 1.2962962962962963,
+      "mean_recall": 0.7685185185185185,
+      "mean_complete_evidence_rate": 0.48148148148148145,
+      "mean_cost_usd": 0.0008550981481481481,
+      "mean_latency_ms": 7481.128071037044
+    },
+    "4500": {
+      "token_budget_stop_rate": 0.07407407407407407,
+      "mean_new_unique_docs_after_hop1": 1.7777777777777777,
+      "mean_recall": 0.8395061728395062,
+      "mean_complete_evidence_rate": 0.6296296296296297,
+      "mean_cost_usd": 0.0012067155555555555,
+      "mean_latency_ms": 8551.8384566315
+    },
+    "6000": {
+      "token_budget_stop_rate": 0.0,
+      "mean_new_unique_docs_after_hop1": 1.7407407407407407,
+      "mean_recall": 0.8024691358024691,
+      "mean_complete_evidence_rate": 0.5185185185185185,
+      "mean_cost_usd": 0.0012578903703703704,
+      "mean_latency_ms": 8790.590280890077
+    }
+  },
+  "provenance": {
+    "raw_result_files": {
+      "3000": "results/agentic_budget_calibration_3000.json",
+      "4500": "results/agentic_budget_calibration_4500.json",
+      "6000": "results/agentic_budget_calibration_6000.json"
+    },
+    "n_questions_by_budget": {
+      "3000": 27,
+      "4500": 27,
+      "6000": 27
+    }
+  }
+}
