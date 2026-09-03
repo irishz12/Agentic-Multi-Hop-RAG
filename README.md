@@ -540,7 +540,7 @@ rather than smoothed over (see Limitations below).
 
 ![Question-type breakdown](results/charts/multihop_question_type_breakdown.png)
 
-### Three worked examples
+### Four worked examples
 
 Each trace below combines the original benchmark run with a **live,
 independent replay** of that exact question (`scripts/replay_multihop_examples.py`,
@@ -605,8 +605,37 @@ final aggregate result.
 - **Baseline (5-chunk) answer** (incorrect): *"...does not mention Amazon's
   acquisition of iRobot."*
 
-All three questions' stop reason, hop count, and final evidence-document
-set reproduced exactly in the live replay.
+**4. `e6f228404683a4cb` — comparison, false-premise question**
+- **Question**: *"Does 'The New York Times' article attribute the failure
+  of the Buffalo Bills' defense to the contributions of Jordan Poyer, while
+  the 'Sporting News' article suggests that the Baltimore Ravens' defense
+  needs to improve before their game against the Cincinnati Bengals?"*
+- **Hop 1** (= the question itself) → 2 documents: an ESPN piece on Poyer's
+  personal story, and a Bills-vs-Bengals game recap. Neither is a New York
+  Times or Sporting News article.
+- **Hop 2** (controller's follow-up query): *"Sporting News article
+  Baltimore Ravens defense needs improvement before game against Cincinnati
+  Bengals"* → 5 new chunks, adding NFL power-rankings and best-bets
+  coverage. Still no New York Times or Sporting News byline appears
+  anywhere in the retrieved evidence.
+- **Agentic answer** (correct, gold = "no"): declines to confirm the
+  question's premise — neither named publication's article exists in the
+  evidence, Poyer is in fact portrayed positively rather than blamed for
+  the defense's struggles, and the one comment about the Ravens' defense
+  isn't attributed to Sporting News specifically.
+- **Baseline (5-chunk) answer** (incorrect): a similarly-worded denial that
+  the judge nonetheless graded incorrect.
+- **Non-determinism note**: the *original* benchmark run took 3 hops and
+  stopped at `max_hops`; the *live replay* stopped after 2 hops at
+  `evidence_sufficient` — the controller reached a different stopping
+  decision on a repeat run at `temperature=0.0`. The final evidence-document
+  set and the correct/incorrect grade were unaffected. This example is
+  included specifically because it did *not* fully reproduce, not because
+  it did — see the Limitations note below.
+
+The first three questions' stop reason, hop count, and final
+evidence-document set all reproduced exactly in the live replay. The fourth
+did not — see above — and is included for that reason.
 
 ### Limitations of this analysis
 
@@ -615,19 +644,20 @@ set reproduced exactly in the live replay.
   evidence flipped from "both baselines wrong" to "Agentic correct" — the
   other 27 saw no such clean win. This section deliberately reports both
   numbers, not just the flattering one.
-- **Generation is not byte-deterministic.** All 5 replayed questions used
-  `temperature=0.0` end to end, and hop count / stop reason / (in 3 of 5
-  cases) the final evidence-document set reproduced exactly — but the
-  exact wording of every answer differed slightly between the original run
-  and the replay, even when the underlying evidence was identical. Hosted
-  LLM inference at temperature 0 is not guaranteed to be token-identical
-  across separate API calls.
-- **Retrieval itself showed minor variation on 2 of the 5 replayed
+- **Generation is not byte-deterministic.** All 6 replayed questions used
+  `temperature=0.0` end to end. Hop count and stop reason reproduced exactly
+  in 5 of 6 cases, and the final evidence-document set reproduced exactly in
+  4 of 6 cases — but the exact wording of every answer differed slightly
+  between the original run and the replay, even when the underlying
+  evidence was identical. Hosted LLM inference at temperature 0 is not
+  guaranteed to be token-identical across separate API calls.
+- **Retrieval itself showed minor variation on 2 of the 6 replayed
   questions** — a different chunk was selected at the retrieval boundary,
   most likely because the vector index's approximate nearest-neighbor
   search isn't guaranteed bit-identical across separate live queries. The
-  three examples shown above were chosen from the three that reproduced
-  exactly; this is disclosed, not hidden.
+  first three examples above were chosen because they reproduced exactly;
+  the fourth was deliberately included because it did not — this is
+  disclosed, not hidden.
 - **This is a targeted, traceable subset, not the whole system.** The
   86–92 question population above is genuinely multi-hop-resolved
   development questions specifically — it is not the §8/§9 headline
