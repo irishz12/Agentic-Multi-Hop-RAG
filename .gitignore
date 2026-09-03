@@ -72,3 +72,4 @@ results/*
 .idea/
 .vercel
 .env*
+.env
