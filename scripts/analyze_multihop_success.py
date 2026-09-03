@@ -83,7 +83,7 @@ EXCLUSION_REASON = (
 )
 
 OUTPUT_FILE = "results/multihop_success_analysis.json"  # this script's ONLY write target
-MAX_EXAMPLES = 5
+MAX_EXAMPLES = 6  # was 5 -- README claims 6 used for examples (7 total, minus 1 documented exclusion); match it
 
 
 def _load(path: str) -> dict:

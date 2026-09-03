@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-31T12:29:20.939595+00:00",
+  "generated_at": "2026-09-03T07:29:54.302621+00:00",
   "purpose": "Phase 6A \u2014 multi-hop success analysis: did later agentic hops recover required gold evidence hop 1 missed, document-level, all-hops, dev-only, ZERO LLM/API calls. NOT fact-level grounding \u2014 see mhrag.eval.multihop_success module docstring for the explicit non-mixing boundary with mhrag.eval.fact_grounding's Tier A/Tier B.",
   "scope_label": "doc-level multi-hop success analysis (all hops)",
   "populations": {
@@ -769,7 +769,8 @@
     "d04368e192f8096f",
     "4777d24f9b457e0d",
     "4b47aed43a46af11",
-    "da4c6b17d34d5bb3"
+    "da4c6b17d34d5bb3",
+    "e6f228404683a4cb"
   ],
   "selected_examples_detail": [
     {
@@ -952,6 +953,41 @@
       "baseline_grade": "incorrect",
       "matched_grade": "incorrect",
       "tier": 1
+    },
+    {
+      "qa_id": "e6f228404683a4cb",
+      "question": "Does 'The New York Times' article attribute the failure of the Buffalo Bills' defense to the contributions of Jordan Poyer, while the 'Sporting News' article suggests that the Baltimore Ravens' defense needs to improve before their game against the Cincinnati Bengals?",
+      "question_type": "comparison_query",
+      "gold_answer": "no",
+      "num_agent_hops": 3,
+      "stop_reason": "max_hops",
+      "gold_doc_ids": [
+        "0a7d04f797ff6837",
+        "e22103bcd7260e7d"
+      ],
+      "hop1_doc_ids": [
+        "0a7d04f797ff6837",
+        "bf140b0c9e9e920a"
+      ],
+      "final_doc_ids_all_hops": [
+        "0a7d04f797ff6837",
+        "0a8a85bfe2dd5a9e",
+        "38fc3d700c01fb1f",
+        "39a72573127c6696",
+        "5d98e0c5a33a848b",
+        "bf140b0c9e9e920a",
+        "e22103bcd7260e7d"
+      ],
+      "newly_added_required_doc_ids": [
+        "e22103bcd7260e7d"
+      ],
+      "agentic_answer": "The available information does not include any article from The New York Times or Sporting News, nor does it attribute the failure of the Buffalo Bills' defense to Jordan Poyer. In fact, the context portrays Poyer as a vital, versatile, and uplifting force for the Bills\u2019 defense, with former coordinator Les Frazier crediting him for enabling the defense to be its best through leadership, toughness, and communication. \n\nAdditionally, while Source 7 mentions that the Baltimore Ravens\u2019 defense \u201cneeds to pick up the pieces,\u201d this is presented as a general observation, not as a direct suggestion from Sporting News, and it is not explicitly tied to their upcoming game against the Bengals in a way that matches the question\u2019s framing.\n\nTherefore, the claim in the question cannot be confirmed using the provided context. The available information is insufficient to answer as stated.",
+      "baseline_answer": "The available information does not contain any article from The New York Times or Sporting News, nor does it attribute the failure of the Buffalo Bills' defense to Jordan Poyer or suggest anything about the Baltimore Ravens' defense. Therefore, the question cannot be answered based on the provided context.",
+      "matched_answer": "The available information does not contain any article from The New York Times or Sporting News that attributes the failure of the Buffalo Bills' defense to Jordan Poyer, nor does it mention the Baltimore Ravens or suggest that their defense needs to improve before a game against the Cincinnati Bengals. Therefore, the question cannot be answered based on the provided context.",
+      "agentic_grade": "correct",
+      "baseline_grade": "incorrect",
+      "matched_grade": "incorrect",
+      "tier": 1
     }
   ],
   "denominators": {
@@ -960,6 +996,6 @@
     "population_three_way_n": 86,
     "added_required_evidence_n": 33,
     "judge_covered_within_added_evidence_n": 33,
-    "selected_examples_n": 5
+    "selected_examples_n": 6
   }
 }
