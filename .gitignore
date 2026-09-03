@@ -73,3 +73,4 @@ results/*
 .vercel
 .env*
 .env
+!.env.example
