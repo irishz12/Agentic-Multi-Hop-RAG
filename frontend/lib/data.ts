@@ -10,6 +10,8 @@ import type {
   CostLatency,
   HoldoutConsumed,
   HoldoutReport,
+  MultihopExamplesReplay,
+  MultihopSuccessAnalysis,
   RetrievalEval,
   RouterModel,
   SampleReport,
@@ -209,4 +211,18 @@ export function getExampleQuestions(): string[] {
     examples.push(shortest);
   }
   return examples;
+}
+
+/**
+ * The multi-hop case study's evidence, in its two source shapes: the
+ * document-level analysis of which questions a later hop rescued (no
+ * legacy pipeline names in this artifact — nothing to rekey), and the
+ * separate live replay that recovered the verbatim hop-by-hop query trace
+ * for the questions it selected (development split only).
+ */
+export function getMultihopSuccessAnalysis(): MultihopSuccessAnalysis {
+  return readJSON<MultihopSuccessAnalysis>("multihop_success_analysis.json");
+}
+export function getMultihopExamplesReplay(): MultihopExamplesReplay {
+  return readJSON<MultihopExamplesReplay>("multihop_examples_replay.json");
 }
